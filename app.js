@@ -148,7 +148,7 @@ function buildCity(id) {
   for (const h of list) {
     if (h.kind === "palace") continue;
     const [x, z, row] = queue[qi++]; const t = tierOf(h.tier); const s = Math.min(2.0, (LOT - 0.5) / t.plot);
-    const o = shadowAll(makeTier(h.tier || "oddiy", { roof: h.roof, wall: h.wall, car: h.car })); o.scale.setScalar(s); o.position.set(x, TOP + 0.16, z); o.rotation.y = 0; // every house faces the default camera (south) o.userData.nick = h.nick; g.add(o);
+    const o = shadowAll(makeTier(h.tier || "oddiy", { roof: h.roof, wall: h.wall, car: h.car })); o.scale.setScalar(s); o.position.set(x, TOP + 0.16, z); o.rotation.y = 0; /* every house faces the default camera (south) */ o.userData.nick = h.nick; g.add(o);
     const lawn = new THREE.Mesh(new THREE.BoxGeometry(LOT - 0.3, 0.04, LOT - 0.3), grass); lawn.position.set(x, TOP + 0.17, z); lawn.receiveShadow = true; g.add(lawn);
     spots[h.nick.toLowerCase()] = { h, pos: new THREE.Vector3(x, TOP + 0.16, z), height: ({ villa: 1.9, hovli: 1.5, rangli: 1.5, oddiy: 1.5, uy2: 1.9, oquy: 1.5 }[h.tier || "oddiy"] ?? 1.6) * s };
   }
