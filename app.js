@@ -185,16 +185,21 @@ function buildCity(id) {
     spots[h.nick.toLowerCase()] = { h, pos: new THREE.Vector3(cx, TOP, cz), height: 6.6 };
   }
   used.forEach(([cx, cz], i) => { if (i < bi || role[i] === "park") return; for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) queue.push([cx + (c - 1) * LOT, cz + (r - 0.5) * LOT, role[i]]); });
+  // tall buildings take the back row of a block, low ones the front row, so nothing hides behind a tower
+  const TALL = new Set(["minora", "burj", "pisa", "tajmahal", "masjid", "qasr", "uy2"]), usedQ = new Set();
+  const lotFor = (h) => { const back = TALL.has(h.tier); let k = queue.findIndex((q, i) => !usedQ.has(i) && (((i % 6) < 3) === back)); if (k < 0) k = queue.findIndex((q, i) => !usedQ.has(i)); usedQ.add(k); return queue[k]; };
   let qi = 0;
   for (const h of list) {
     if (h.kind === "palace") continue;
-    const [x, z] = queue[qi++]; const t = tierOf(h.tier); const s = Math.min(2.0, (LOT - 0.5) / t.plot);
-    const o = shadowAll(makeTier(h.tier || "oddiy", { roof: h.roof, wall: h.wall, car: h.car })); o.scale.setScalar(s); o.position.set(x, TOP + 0.16, z); o.rotation.y = 0; o.userData.nick = h.nick; g.add(o);
+    qi++; const [x, z] = lotFor(h); const t = tierOf(h.tier); const s = Math.min(2.0, (LOT - 0.5) / t.plot);
+    const o = shadowAll(makeTier(h.tier || "oddiy", { roof: h.roof, wall: h.wall, car: h.car, floors: h.floors, kind2: h.kind2, flags: h.flags })); o.scale.setScalar(s); o.position.set(x, TOP + 0.16, z); o.rotation.y = 0; o.userData.nick = h.nick; g.add(o);
+    if (h.gift === "car") { const car = shadowAll(makeCar(h.carColor || "#E3262F", true)); car.scale.setScalar(1.5); car.position.set(x + LOT * 0.32, TOP + 0.2, z + LOT * 0.36); car.rotation.y = 0.15; g.add(car); }
+    const hb = new THREE.Box3().setFromObject(o);
     const lawn = new THREE.Mesh(new THREE.BoxGeometry(LOT - 0.3, 0.04, LOT - 0.3), grass); lawn.position.set(x, TOP + 0.17, z); lawn.receiveShadow = true; g.add(lawn);
-    spots[h.nick.toLowerCase()] = { h, pos: new THREE.Vector3(x, TOP + 0.16, z), height: ({ villa: 1.9, hovli: 1.5, rangli: 1.5, oddiy: 1.5, uy2: 1.9, oquy: 1.5 }[h.tier || "oddiy"] ?? 1.6) * s };
+    spots[h.nick.toLowerCase()] = { h, pos: new THREE.Vector3(x, TOP + 0.16, z), height: Math.max(1.2, hb.max.y - TOP - 0.16) };
   }
-  const free = queue.slice(qi).map(([x, z]) => [x, z]);
-  for (; qi < queue.length; qi++) { // spare plots: grass, a green "free plot" sign here and there, some trees
+  const free = queue.filter((q, i) => !usedQ.has(i)).map(([x, z]) => [x, z]);
+  for (qi = 0; qi < queue.length; qi++) { if (usedQ.has(qi)) continue; // spare plots: grass, a green "free plot" sign here and there, some trees
     const [x, z] = queue[qi]; const lawn = new THREE.Mesh(new THREE.BoxGeometry(LOT - 0.3, 0.04, LOT - 0.3), grass); lawn.position.set(x, TOP + 0.17, z); lawn.receiveShadow = true; g.add(lawn);
     if (rnd() < 0.45) { const tr = shadowAll(makeTree(1.3 + rnd() * 0.6)); tr.position.set(x + (rnd() - 0.5) * 1.6, TOP + 0.18, z + (rnd() - 0.5) * 1.6); g.add(tr); }
     else if (rnd() < 0.5) { const peg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.6, 0.05), M("#7A5230")); peg.position.set(x, TOP + 0.48, z + 1.2); g.add(peg); const sign = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.35, 0.04), M("#22C55E", 0.6)); sign.position.set(x, TOP + 0.85, z + 1.2); g.add(sign); }
