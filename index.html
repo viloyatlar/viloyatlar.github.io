@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Viloyatlar bellashuvi — 3D xarita</title>
+<meta name="description" content="Har bir obunachiga — bitta uy. O‘zbekiston 3D xaritasida uyingizni, qo‘shnilaringizni va viloyatlar bellashuvini ko‘ring.">
+<meta property="og:title" content="Viloyatlar bellashuvi — 3D xarita">
+<meta property="og:description" content="Uyingizni toping, qo‘shnilaringizni ko‘ring. Qaysi viloyat g‘olib?">
+<meta name="theme-color" content="#CFE2EE">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="labels"></div>
+
+<header class="top">
+  <div class="brand"><span class="dot"></span><b>Viloyatlar bellashuvi</b></div>
+  <div class="stat"><span id="total">0</span> uy</div>
+</header>
+
+<div class="search">
+  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+  <input id="q" type="search" placeholder="Nikingiz bo‘yicha uyingizni toping" autocomplete="off" autocapitalize="off" spellcheck="false">
+  <div id="sugg" class="sugg" hidden></div>
+</div>
+
+<div class="fabs">
+  <button id="home" class="fab" title="Butun xarita" aria-label="Butun xarita">
+    <svg viewBox="0 0 24 24" width="22" height="22"><path d="M4 9l8-6 8 6v10a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+  </button>
+</div>
+
+<section id="sheet" class="sheet">
+  <div class="grab"></div>
+  <div id="sheetBody"></div>
+</section>
+
+<div id="loading" class="loading"><div class="spin"></div>Xarita yuklanmoqda…</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
