@@ -107,57 +107,131 @@ for (const reg of Object.values(R)) {
 }
 
 // ---------------------------------------------------------------- CITY level (built on demand, cached)
-const LOT = 4.4, ROAD = 2.0, BW = 3 * LOT, BD = 2 * LOT; // block = 3 x 2 plots
+// Residents fill the blocks nearest the centre; around them: parks, spare plots for newcomers, a full street grid.
+// Traffic and pedestrians grow with the population (few homes -> a couple of cars and walkers; many -> busy streets).
+const LOT = 4.4, ROAD = 2.0, BW = 3 * LOT, BD = 2 * LOT, PX = BW + ROAD, PZ = BD + ROAD; // block = 3 x 2 plots
 const cities = {}; let city = null; // current city
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+function makePerson(shirt) {
+  const g = new THREE.Group();
+  const legs = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.22, 4, 8), M(["#2F3B4C", "#3B5A8C", "#4A3B32"][Math.floor(rnd() * 3)], 0.8)); legs.position.y = 0.24; g.add(legs);
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.14, 0.2, 4, 8), M(shirt, 0.8)); body.position.y = 0.52; g.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 10), M(["#E8B48A", "#D19A6C", "#B97E55"][Math.floor(rnd() * 3)], 0.7)); head.position.y = 0.8; g.add(head);
+  return shadowAll(g);
+}
+function makePark(g, cx, cz) {
+  const grass = M("#8FD06E", 0.95), path = M("#E9DCC4", 0.9), stone = M("#CFC6B6", 0.8);
+  const base = new THREE.Mesh(new RoundedBoxGeometry(BW, 0.18, BD, 2, 0.06), grass); base.position.set(cx, TOP + 0.09, cz); base.receiveShadow = true; g.add(base);
+  for (const [w, d] of [[BW - 0.4, 0.9], [0.9, BD - 0.4]]) { const p = new THREE.Mesh(new THREE.BoxGeometry(w, 0.03, d), path); p.position.set(cx, TOP + 0.19, cz); p.receiveShadow = true; g.add(p); }
+  const ring = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.35, 0.35, 32), stone); ring.position.set(cx, TOP + 0.35, cz); g.add(ring);
+  const water = new THREE.Mesh(new THREE.CylinderGeometry(1.08, 1.08, 0.05, 32), new THREE.MeshStandardMaterial({ color: "#4CB8E8", roughness: 0.1, emissive: "#1D8FD0", emissiveIntensity: 0.25 })); water.position.set(cx, TOP + 0.5, cz); g.add(water);
+  const jet = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.14, 0.9, 12), new THREE.MeshStandardMaterial({ color: "#BFE9FF", transparent: true, opacity: 0.75, roughness: 0.1 })); jet.position.set(cx, TOP + 0.95, cz); g.add(jet);
+  for (const [dx, dz, r] of [[-2.2, -1.6, 0], [2.2, -1.6, 0], [-2.2, 1.6, Math.PI], [2.2, 1.6, Math.PI]]) {
+    const bench = new THREE.Group(); const wood = M("#A0714A", 0.7);
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.07, 0.3), wood); seat.position.y = 0.28; bench.add(seat);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.25, 0.05), wood); back.position.set(0, 0.45, -0.13); bench.add(back);
+    for (const x of [-0.42, 0.42]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.28, 0.28), M("#3A3F48", 0.5)); leg.position.set(x, 0.14, 0); bench.add(leg); }
+    bench.position.set(cx + dx, TOP + 0.18, cz + dz); bench.rotation.y = r; g.add(shadowAll(bench));
+  }
+  const flowers = ["#F05D8B", "#FFD23F", "#FF7A45", "#B07CFF", "#FFFFFF"];
+  for (let i = 0; i < 18; i++) { const f = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), M(flowers[i % 5], 0.6)); const a = (i / 18) * Math.PI * 2; f.position.set(cx + Math.cos(a) * 1.75, TOP + 0.24, cz + Math.sin(a) * 1.75); g.add(f); }
+  for (const [dx, dz] of [[-5.2, -3.2], [-5.2, 3.2], [5.2, -3.2], [5.2, 3.2], [-3.6, -3.4], [3.6, 3.4], [-5.6, 0], [5.6, 0], [0, -3.6], [0, 3.6]]) {
+    const t = shadowAll(makeTree(1.3 + rnd() * 0.7)); t.position.set(cx + dx + (rnd() - 0.5) * 0.4, TOP + 0.18, cz + dz + (rnd() - 0.5) * 0.3); g.add(t);
+  }
+  return jet;
+}
 function buildCity(id) {
   if (cities[id]) return cities[id];
   const reg = R[id], g = new THREE.Group(), spots = {}, list = reg.houses.slice();
   const order = { villa: 3, hovli: 2, rangli: 1, oddiy: 0 };
   list.sort((a, b) => (b.kind === "palace") - (a.kind === "palace") || (order[b.tier] || 0) - (order[a.tier] || 0) || (a.qism || 0) - (b.qism || 0));
   const palaces = list.filter((h) => h.kind === "palace").length, plots = list.length - palaces;
-  const blocksNeeded = Math.ceil(plots / 6) + palaces + Math.max(3, Math.ceil(list.length / 12)); // + parks / room to grow
-  const pitchA = (BW + ROAD) * (BD + ROAD);
+  const resBlocks = Math.max(1, Math.ceil(plots / 6) + palaces);
+  const total = Math.max(14, Math.round(resBlocks * 1.8) + 8); // residential + parks + spare blocks
   const A0 = area(reg.ring), span0 = Math.max(reg.size.x, reg.size.z);
-  const S = Math.max(Math.sqrt((blocksNeeded * pitchA * 2.6) / A0), 70 / span0); // city size grows with residents
+  const S = Math.max(Math.sqrt((total * PX * PZ * 2.4) / A0), 95 / span0); // the city grows with its population
   const ring = reg.ring.map(([x, z]) => [(x - reg.anchor.x) * S, (z - reg.anchor.z) * S]);
   const land = extrude(ring, COL[id], 1.1); land.userData.city = true; g.add(land);
-  // street grid: blocks fully inside the region, nearest to the centre first
   let xs = Infinity, xe = -Infinity, zs = Infinity, ze = -Infinity; ring.forEach(([x, z]) => { xs = Math.min(xs, x); xe = Math.max(xe, x); zs = Math.min(zs, z); ze = Math.max(ze, z); });
   const blocks = [];
-  for (let bx = Math.floor(xs / (BW + ROAD)); bx * (BW + ROAD) < xe; bx++) for (let bz = Math.floor(zs / (BD + ROAD)); bz * (BD + ROAD) < ze; bz++) {
-    const cx = bx * (BW + ROAD), cz = bz * (BD + ROAD), hw = (BW + ROAD) / 2, hd = (BD + ROAD) / 2;
+  for (let bx = Math.floor(xs / PX); bx * PX < xe; bx++) for (let bz = Math.floor(zs / PZ); bz * PZ < ze; bz++) {
+    const cx = bx * PX, cz = bz * PZ, hw = PX / 2, hd = PZ / 2;
     if ([[cx - hw, cz - hd], [cx + hw, cz - hd], [cx - hw, cz + hd], [cx + hw, cz + hd]].every((p) => inside(p, ring))) blocks.push([cx, cz]);
   }
   blocks.sort((a, b) => Math.hypot(a[0], a[1] * 1.3) - Math.hypot(b[0], b[1] * 1.3));
+  const used = blocks.slice(0, total);
   const asphalt = M("#8E949B", 0.9), walk = M("#E8E1D3", 0.9), grass = M("#9CD37E", 0.95), line = M("#F4F1E8", 0.6);
-  const used = blocks.slice(0, Math.max(blocksNeeded, 4));
   for (const [cx, cz] of used) {
-    const road = new THREE.Mesh(new THREE.BoxGeometry(BW + ROAD + 0.02, 0.06, BD + ROAD + 0.02), asphalt); road.position.set(cx, TOP + 0.03, cz); road.receiveShadow = true; g.add(road);
-    for (let i = -2; i <= 2; i++) { const d = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.065, 0.12), line); d.position.set(cx + i * 2.6, TOP + 0.035, cz + (BD + ROAD) / 2); g.add(d); }
-    const slab = new THREE.Mesh(new RoundedBoxGeometry(BW, 0.16, BD, 2, 0.06), walk); slab.position.set(cx, TOP + 0.08, cz); slab.receiveShadow = true; g.add(slab);
+    const road = new THREE.Mesh(new THREE.BoxGeometry(PX + 0.02, 0.06, PZ + 0.02), asphalt); road.position.set(cx, TOP + 0.03, cz); road.receiveShadow = true; g.add(road);
+    for (let i = -2; i <= 2; i++) { const d = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.065, 0.12), line); d.position.set(cx + i * 2.6, TOP + 0.035, cz + PZ / 2); g.add(d); }
+    for (let i = -1; i <= 1; i++) { const d = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.065, 0.9), line); d.position.set(cx + PX / 2, TOP + 0.035, cz + i * 2.8); g.add(d); }
   }
-  // fill: palaces take a whole block, everyone else one plot; empty plots become small gardens
+  // roles: centre blocks are homes; around them every 3rd block is a park, the rest are spare plots
+  const role = used.map((_, i) => (i < resBlocks ? "home" : (i - resBlocks) % 3 === 1 ? "park" : "spare"));
+  const jets = [];
+  used.forEach(([cx, cz], i) => {
+    if (role[i] === "park") { jets.push(makePark(g, cx, cz)); return; }
+    const slab = new THREE.Mesh(new RoundedBoxGeometry(BW, 0.16, BD, 2, 0.06), walk); slab.position.set(cx, TOP + 0.08, cz); slab.receiveShadow = true; g.add(slab);
+    for (const [dx, dz] of [[-BW / 2 + 0.25, -BD / 2 + 0.25], [BW / 2 - 0.25, BD / 2 - 0.25]]) {
+      const lp = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.3, 6), M("#3A3F48", 0.5)); lp.position.set(cx + dx, TOP + 0.8, cz + dz); g.add(lp);
+      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), new THREE.MeshStandardMaterial({ color: "#FFF3C4", emissive: "#FFD978", emissiveIntensity: 0.9 })); bulb.position.set(cx + dx, TOP + 1.48, cz + dz); g.add(bulb);
+    }
+  });
+  // homes: palaces take a whole block, everyone else one plot
   let bi = 0; const queue = [];
   for (const h of list) if (h.kind === "palace") {
     const [cx, cz] = used[bi++]; const p = makePalace(); p.scale.setScalar(1.45); p.position.set(cx, TOP + 0.16, cz); p.userData.nick = h.nick; g.add(p);
     if (h.gift === "car") { const car = shadowAll(makeCar("#E3262F", true)); car.scale.setScalar(2.2); car.position.set(cx + 4.6, TOP + 0.16, cz + 3.4); car.rotation.y = -0.4; g.add(car); }
     spots[h.nick.toLowerCase()] = { h, pos: new THREE.Vector3(cx, TOP, cz), height: 6.6 };
   }
-  for (; bi < used.length; bi++) { const [cx, cz] = used[bi]; for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) queue.push([cx + (c - 1) * LOT, cz + (r - 0.5) * LOT, r]); }
+  used.forEach(([cx, cz], i) => { if (i < bi || role[i] === "park") return; for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) queue.push([cx + (c - 1) * LOT, cz + (r - 0.5) * LOT, role[i]]); });
   let qi = 0;
   for (const h of list) {
     if (h.kind === "palace") continue;
-    const [x, z, row] = queue[qi++]; const t = tierOf(h.tier); const s = Math.min(2.0, (LOT - 0.5) / t.plot);
-    const o = shadowAll(makeTier(h.tier || "oddiy", { roof: h.roof, wall: h.wall, car: h.car })); o.scale.setScalar(s); o.position.set(x, TOP + 0.16, z); o.rotation.y = 0; /* every house faces the default camera (south) */ o.userData.nick = h.nick; g.add(o);
+    const [x, z] = queue[qi++]; const t = tierOf(h.tier); const s = Math.min(2.0, (LOT - 0.5) / t.plot);
+    const o = shadowAll(makeTier(h.tier || "oddiy", { roof: h.roof, wall: h.wall, car: h.car })); o.scale.setScalar(s); o.position.set(x, TOP + 0.16, z); o.rotation.y = 0; o.userData.nick = h.nick; g.add(o);
     const lawn = new THREE.Mesh(new THREE.BoxGeometry(LOT - 0.3, 0.04, LOT - 0.3), grass); lawn.position.set(x, TOP + 0.17, z); lawn.receiveShadow = true; g.add(lawn);
     spots[h.nick.toLowerCase()] = { h, pos: new THREE.Vector3(x, TOP + 0.16, z), height: ({ villa: 1.9, hovli: 1.5, rangli: 1.5, oddiy: 1.5, uy2: 1.9, oquy: 1.5 }[h.tier || "oddiy"] ?? 1.6) * s };
   }
-  for (; qi < queue.length; qi++) { const [x, z] = queue[qi]; const lawn = new THREE.Mesh(new THREE.BoxGeometry(LOT - 0.3, 0.04, LOT - 0.3), grass); lawn.position.set(x, TOP + 0.17, z); g.add(lawn); if (qi % 2 === 0) { const tr = shadowAll(makeTree(1.6)); tr.position.set(x + (rnd() - 0.5), TOP + 0.18, z + (rnd() - 0.5)); g.add(tr); } }
-  // scattered trees on the rest of the land
-  for (let i = 0; i < 160; i++) { const p = [xs + rnd() * (xe - xs), zs + rnd() * (ze - zs)]; if (!inside(p, ring) || edgeDist(p, ring) < 2) continue; if (used.some(([cx, cz]) => Math.abs(p[0] - cx) < (BW + ROAD) / 2 + 1 && Math.abs(p[1] - cz) < (BD + ROAD) / 2 + 1)) continue; const tr = shadowAll(makeTree(1.4 + rnd())); tr.position.set(p[0], TOP, p[1]); g.add(tr); }
-  let ux = Infinity, uX = -Infinity, uz = Infinity, uZ = -Infinity; used.forEach(([cx, cz]) => { ux = Math.min(ux, cx - BW); uX = Math.max(uX, cx + BW); uz = Math.min(uz, cz - BD); uZ = Math.max(uZ, cz + BD); });
+  for (; qi < queue.length; qi++) { // spare plots: grass, a green "free plot" sign here and there, some trees
+    const [x, z] = queue[qi]; const lawn = new THREE.Mesh(new THREE.BoxGeometry(LOT - 0.3, 0.04, LOT - 0.3), grass); lawn.position.set(x, TOP + 0.17, z); lawn.receiveShadow = true; g.add(lawn);
+    if (rnd() < 0.45) { const tr = shadowAll(makeTree(1.3 + rnd() * 0.6)); tr.position.set(x + (rnd() - 0.5) * 1.6, TOP + 0.18, z + (rnd() - 0.5) * 1.6); g.add(tr); }
+    else if (rnd() < 0.5) { const peg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.6, 0.05), M("#7A5230")); peg.position.set(x, TOP + 0.48, z + 1.2); g.add(peg); const sign = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.35, 0.04), M("#22C55E", 0.6)); sign.position.set(x, TOP + 0.85, z + 1.2); g.add(sign); }
+  }
+  // countryside trees outside the street grid
+  for (let i = 0; i < 260; i++) { const p = [xs + rnd() * (xe - xs), zs + rnd() * (ze - zs)]; if (!inside(p, ring) || edgeDist(p, ring) < 2) continue; if (used.some(([cx, cz]) => Math.abs(p[0] - cx) < PX / 2 + 1 && Math.abs(p[1] - cz) < PZ / 2 + 1)) continue; const tr = shadowAll(makeTree(1.4 + rnd())); tr.position.set(p[0], TOP, p[1]); g.add(tr); }
+
+  // traffic: each car circles one block on its near lane (neighbouring blocks share roads -> two-way streets)
+  const N = list.length;
+  const rect = (cx, cz, hx, hz, d) => { const P = 4 * (hx + hz); let u = ((d % P) + P) % P; if (u < 2 * hx) return [cx - hx + u, cz + hz, 0]; u -= 2 * hx; if (u < 2 * hz) return [cx + hx, cz + hz - u, Math.PI / 2]; u -= 2 * hz; if (u < 2 * hx) return [cx + hx - u, cz - hz, Math.PI]; u -= 2 * hx; return [cx - hx, cz - hz + u, -Math.PI / 2]; };
+  const movers = [];
+  const pickBlock = () => used[Math.floor(Math.pow(rnd(), 1.6) * used.length)]; // busier near the centre
+  const carCols = ["#2F6FD6", "#E3262F", "#F5F5F5", "#1F2937", "#F59E0B", "#10B981", "#9CA3AF"];
+  const nCars = clamp(2 + Math.round(N * 0.7), 2, 50), nPeople = clamp(2 + Math.round(N * 1.0), 3, 70);
+  for (let i = 0; i < nCars; i++) {
+    const car = shadowAll(makeCar(carCols[i % carCols.length], rnd() < 0.15)); car.scale.setScalar(1.45); g.add(car);
+    const [cx, cz] = pickBlock(); movers.push({ o: car, cx, cz, hx: BW / 2 + ROAD * 0.27, hz: BD / 2 + ROAD * 0.27, v: 3.2 + rnd() * 2.2, d0: rnd() * 100, dir: 1, kind: "car" });
+  }
+  const shirts = ["#EF4444", "#3B82F6", "#22C55E", "#F59E0B", "#A855F7", "#EC4899", "#14B8A6", "#FFFFFF"];
+  for (let i = 0; i < nPeople; i++) {
+    const p = makePerson(shirts[i % shirts.length]); g.add(p);
+    const [cx, cz] = pickBlock(); const inPark = role[used.findIndex((b) => b[0] === cx && b[1] === cz)] === "park";
+    movers.push({ o: p, cx, cz, hx: inPark ? 2.4 : BW / 2 - 0.3, hz: inPark ? 2.0 : BD / 2 - 0.3, v: 0.55 + rnd() * 0.45, d0: rnd() * 60, dir: rnd() < 0.5 ? 1 : -1, kind: "walk", ph: rnd() * 6 });
+  }
+  const anim = (t) => {
+    for (const m of movers) {
+      const [x, z, a] = rect(m.cx, m.cz, m.hx, m.hz, m.d0 + m.dir * m.v * t);
+      m.o.position.set(x, TOP + (m.kind === "car" ? 0.06 : 0.17 + Math.abs(Math.sin(t * 7 + m.ph)) * 0.05), z);
+      m.o.rotation.y = a + (m.dir < 0 ? Math.PI : 0); // model front = +x
+    }
+    for (const j of jets) j.scale.y = 1 + 0.12 * Math.sin(t * 6);
+  };
+
+  let ux = Infinity, uX = -Infinity, uz = Infinity, uZ = -Infinity; used.forEach(([cx, cz]) => { ux = Math.min(ux, cx - PX / 2); uX = Math.max(uX, cx + PX / 2); uz = Math.min(uz, cz - PZ / 2); uZ = Math.max(uZ, cz + PZ / 2); });
   if (!used.length) { ux = -20; uX = 20; uz = -20; uZ = 20; }
-  const c = { id, g, spots, bounds: { x0: Math.min(xs, ux), x1: Math.max(xe, uX), z0: Math.min(zs, uz), z1: Math.max(ze, uZ) }, focus: { x0: ux, x1: uX, z0: uz, z1: uZ } };
+  // the opening shot frames the homes (+ a little of the neighbourhood); the camera may roam over the whole city
+  let hx0 = Infinity, hX = -Infinity, hz0 = Infinity, hZ = -Infinity; used.slice(0, Math.max(resBlocks, 4)).forEach(([cx, cz]) => { hx0 = Math.min(hx0, cx - PX / 2); hX = Math.max(hX, cx + PX / 2); hz0 = Math.min(hz0, cz - PZ / 2); hZ = Math.max(hZ, cz + PZ / 2); });
+  const c = { id, g, spots, anim, bounds: { x0: Math.min(xs, ux), x1: Math.max(xe, uX), z0: Math.min(zs, uz), z1: Math.max(ze, uZ) }, focus: { x0: hx0 - PX * 0.6, x1: hX + PX * 0.6, z0: hz0 - PZ * 0.6, z1: hZ + PZ * 0.6 } };
   g.visible = false; scene.add(g); cities[id] = c; return c;
 }
 
@@ -332,6 +406,7 @@ renderer.setAnimationLoop(() => {
   // keep the map on screen: clamp the look-at point to the current area
   const t = controls.target, cx = Math.max(LIMIT.x0, Math.min(LIMIT.x1, t.x)), cz = Math.max(LIMIT.z0, Math.min(LIMIT.z1, t.z));
   if (cx !== t.x || cz !== t.z) { pan.set(cx - t.x, 0, cz - t.z); t.add(pan); camera.position.add(pan); }
+  if (city && city.anim) city.anim(performance.now() / 1000);
   renderer.render(scene, camera); updateLabels(); shopFrame();
 });
 controls.addEventListener("start", () => (fly = null));
