@@ -77,3 +77,25 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); c
   .top { top: 16px; }
 }
 .more { display: block; width: 100%; margin: 6px 0 10px; padding: 9px; border: 0; border-radius: 12px; background: rgba(255,255,255,.08); color: rgba(255,255,255,.8); font: 700 14px Inter, sans-serif; cursor: pointer; }
+
+/* "Uy olish" modal */
+.overlay { position: fixed; inset: 0; background: rgba(10,20,35,.55); display: grid; place-items: end center; z-index: 20; backdrop-filter: blur(3px); }
+.overlay[hidden] { display: none; }
+.modal { position: relative; width: 100%; max-width: 480px; max-height: 94vh; overflow: auto; background: #fff; color: var(--ink); border-radius: 26px 26px 0 0; padding: 22px 20px calc(20px + env(safe-area-inset-bottom)); box-shadow: 0 -10px 40px rgba(0,0,0,.25); animation: up .28s cubic-bezier(.2,.9,.3,1.2); }
+@keyframes up { from { transform: translateY(40px); } }
+@media (min-width: 900px) { .overlay { place-items: center; } .modal { border-radius: 26px; } }
+.modal .x { position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; border-radius: 50%; border: 0; background: #F3F4F6; font-size: 16px; cursor: pointer; }
+.mh { text-align: center; margin-bottom: 14px; }
+.mi { width: 58px; height: 58px; border-radius: 18px; background: #DCFCE7; display: grid; place-items: center; font-size: 30px; margin: 0 auto 8px; }
+.mh h3 { margin: 0; font-size: 22px; font-weight: 900; }
+.mh p { margin: 4px 0 0; color: var(--muted); font-weight: 600; }
+.steps { list-style: none; margin: 0; padding: 0; counter-reset: st; display: flex; flex-direction: column; gap: 10px; }
+.steps li { counter-increment: st; position: relative; padding: 14px 14px 14px 56px; border-radius: 16px; background: #F7F7F8; display: flex; flex-direction: column; gap: 4px; }
+.steps li::before { content: counter(st); position: absolute; left: 14px; top: 14px; width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-weight: 900; }
+.steps li.ok::before { content: "✓"; background: var(--green); }
+.steps b { font-size: 16px; }
+.steps span { color: var(--muted); font-weight: 600; font-size: 14px; line-height: 1.4; }
+.steps small { color: var(--green-d); font-weight: 800; }
+.btn.ig { margin-top: 8px; color: #fff; background: linear-gradient(90deg,#F58529,#DD2A7B,#8134AF); justify-content: center; }
+.pick select { width: 100%; margin-top: 8px; padding: 11px 12px; border-radius: 12px; border: 1px solid #E5E7EB; font: 600 15px Inter, sans-serif; background: #fff; color: var(--ink); }
+.sugg .none a { color: var(--green-d); font-weight: 800; }

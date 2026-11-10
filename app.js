@@ -3,13 +3,13 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 
-const INSTAGRAM = "https://www.instagram.com/negachi.uz/";
 const NAMES = { QQR: "Qoraqalpog‘iston", NAV: "Navoiy", BUX: "Buxoro", XOR: "Xorazm", SAM: "Samarqand", JIZ: "Jizzax", SIR: "Sirdaryo", TOV: "Toshkent viloyati", TSH: "Toshkent shahri", NAM: "Namangan", AND: "Andijon", FAR: "Farg‘ona", QAS: "Qashqadaryo", SUR: "Surxondaryo" };
 const COL = { QQR: "#E3C78F", NAV: "#EFB27A", BUX: "#E59A6E", XOR: "#7FC37A", SAM: "#6DB4D8", JIZ: "#C7D46E", SIR: "#9AD07C", TOV: "#63B07A", TSH: "#F2C14E", NAM: "#86C9A8", AND: "#7DC860", FAR: "#B9A6E0", QAS: "#E8B24F", SUR: "#D98C8C" };
 const TOP = 1.32; // region top surface height
 
 const [MAP, DATA] = await Promise.all([fetch("data/map.json").then((r) => r.json()), fetch("data/houses.json?v=" + Date.now()).then((r) => r.json())]);
 const HOUSES = DATA.houses.slice();
+const IG = DATA.instagram || "negachi.uz", INSTAGRAM = "https://www.instagram.com/" + IG + "/", POST = DATA.post || INSTAGRAM;
 // ?demo=300 — preview with fake residents (to see how crowded regions look); never shown without the parameter
 const DEMO = Number(new URLSearchParams(location.search).get("demo") || 0);
 if (DEMO) { const ids = ["TSH", "TSH", "TSH", "SAM", "SAM", "FAR", "AND", "NAM", "TOV", "QAS", "SUR", "BUX", "XOR", "NAV", "JIZ", "SIR", "QQR"]; for (let i = 0; i < DEMO; i++) HOUSES.push({ nick: "demo_" + (i + 1), region: ids[(i * 7 + (i % 5)) % ids.length], kind: "house", demo: true }); }
@@ -209,9 +209,10 @@ function showBoard() {
   const shown = boardAll ? RANK : RANK.slice(0, 5);
   const rows = shown.map((id, i) => `<div class="row${COUNT[id] ? "" : " zero"}" data-r="${id}"><div class="n${i === 0 && COUNT[id] ? " first" : ""}">${i + 1}</div><div class="name">${NAMES[id]}</div><div class="bar"><div style="width:${(COUNT[id] / mx) * 100}%"></div></div><div class="v">${COUNT[id]}</div></div>`).join("");
   body.innerHTML = `<h2>🏆 Peshqadamlar</h2><div class="sub">Viloyatni bosing — qo‘shnilaringizni ko‘ring</div>${rows}<button class="more" id="more">${boardAll ? "Qisqartirish ▲" : "Barcha 14 viloyat ▼"}</button>
-    <div class="btns"><a class="btn primary" href="${INSTAGRAM}" target="_blank" rel="noopener">＋ Uy olish (izoh yozing)</a></div>`;
+    <div class="btns"><button class="btn primary get">＋ Uy olish</button></div>`;
   body.querySelectorAll(".row").forEach((r) => (r.onclick = () => selectRegion(r.dataset.r)));
   document.getElementById("more").onclick = () => { boardAll = !boardAll; showBoard(); };
+  body.querySelector(".get").onclick = () => openGet(null);
   setSheetH();
 }
 function selectRegion(id, keepMe = false) {
@@ -221,8 +222,9 @@ function selectRegion(id, keepMe = false) {
   const rank = Object.values(COUNT).filter((n) => n > list.length).length + 1;
   body.innerHTML = `<h2>${NAMES[id]}</h2><div class="sub">${list.length} uy · ${list.length ? rank + "-o‘rin" : "hali uy yo‘q"}</div>
     ${list.length ? `<div class="people">${people}</div>` : `<div class="empty">Bu viloyatda hali hech kim yo‘q. Birinchi bo‘ling — Instagram’da izohga “${NAMES[id]}” deb yozing!</div>`}
-    <div class="btns"><button class="btn ghost" id="back">← Barcha viloyatlar</button><a class="btn primary" href="${INSTAGRAM}" target="_blank" rel="noopener">＋ Uy olish</a></div>`;
+    <div class="btns"><button class="btn ghost" id="back">← Barcha viloyatlar</button><button class="btn primary get">＋ Uy olish</button></div>`;
   body.querySelectorAll(".person").forEach((b) => (b.onclick = () => focusNick(b.dataset.n)));
+  body.querySelector(".get").onclick = () => openGet(id);
   document.getElementById("back").onclick = () => { showBoard(); const h = fitHome(); flyTo(h.pos, h.target); history.replaceState(null, "", location.pathname); };
   setSheetH();
   if (!keepMe) { const span = Math.max(reg.size.x, reg.size.z, 14); const t = reg.anchor.clone().setY(0); flyTo(t.clone().add(new THREE.Vector3(0, span * 1.5 + 22, span * 1.35 + 20)), t); }
@@ -235,14 +237,45 @@ function focusNick(k) {
 }
 function highlight(id) { for (const r of Object.values(R)) r.mats.forEach((m) => (m.emissiveIntensity = id && r.id === id ? 0.22 : 0)); }
 
+// ---------------------------------------------------------------- "Uy olish": follow -> comment your region -> house appears in the next episode
+const getEl = document.getElementById("get");
+const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
+function openGet(regionId) {
+  const reg = regionId || store.get("vb_region") || "";
+  const opts = Object.keys(NAMES).sort((a, b) => NAMES[a].localeCompare(NAMES[b])).map((id) => `<option value="${id}"${id === reg ? " selected" : ""}>${NAMES[id]}</option>`).join("");
+  const done1 = store.get("vb_follow") === "1";
+  getEl.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="gt">
+    <button class="x" aria-label="Yopish">✕</button>
+    <div class="mh"><div class="mi">🏠</div><h3 id="gt">Bepul uy oling</h3><p>3 qadam — keyingi qismda uyingizni quraman!</p></div>
+    <ol class="steps">
+      <li class="${done1 ? "ok" : ""}"><b>Obuna bo‘ling</b><span>Instagram’da @${esc(IG)}</span>
+        <a class="btn ig" id="g1" href="${INSTAGRAM}" target="_blank" rel="noopener">Obuna bo‘lish</a></li>
+      <li><b>Izohga viloyatingizni yozing</b><span>Oxirgi videoga — masalan, “Samarqand 🏠”</span>
+        <div class="pick"><select id="greg"><option value="">Viloyatni tanlang…</option>${opts}</select></div>
+        <a class="btn ig" id="g2" href="${POST}" target="_blank" rel="noopener">Nusxalash va izoh yozish</a><small id="gcopy" hidden>Nusxalandi — izohga joylang ✓</small></li>
+      <li><b>Uyingiz quriladi</b><span>Keyingi qismda videoda ko‘rsatiladi va shu xaritaga qo‘shiladi. Nikingizni qidiruvda tekshirib turing!</span></li>
+    </ol></div>`;
+  getEl.hidden = false;
+  const close = () => (getEl.hidden = true);
+  getEl.querySelector(".x").onclick = close; getEl.onclick = (e) => { if (e.target === getEl) close(); };
+  getEl.querySelector("#g1").onclick = () => { store.set("vb_follow", "1"); getEl.querySelector(".steps li").classList.add("ok"); };
+  getEl.querySelector("#g2").onclick = () => {
+    const id = getEl.querySelector("#greg").value; if (id) store.set("vb_region", id);
+    const text = (id ? NAMES[id].replace(" shahri", "").replace(" viloyati", " viloyati") : "Viloyatim") + " 🏠";
+    try { navigator.clipboard.writeText(text).then(() => (getEl.querySelector("#gcopy").hidden = false)).catch(() => {}); } catch {}
+  };
+}
+addEventListener("keydown", (e) => { if (e.key === "Escape") getEl.hidden = true; });
+
 // ---------------------------------------------------------------- search
 const q = document.getElementById("q"), sugg = document.getElementById("sugg");
 const norm = (s) => s.toLowerCase().replace(/^@/, "").trim();
 q.oninput = () => {
   const t = norm(q.value); if (!t) { sugg.hidden = true; return; }
   const hits = HOUSES.filter((h) => h.nick.toLowerCase().includes(t) || NAMES[h.region].toLowerCase().includes(t) || (h.place || "").toLowerCase().includes(t)).slice(0, 6);
-  sugg.innerHTML = hits.length ? hits.map((h) => `<button data-n="${esc(h.nick.toLowerCase())}">@${esc(h.nick)} <small>${esc(h.place || NAMES[h.region])}</small></button>`).join("") : `<div class="none">Topilmadi. Uy olish uchun Instagram’da izoh yozing.</div>`;
-  sugg.hidden = false; sugg.querySelectorAll("button").forEach((b) => (b.onclick = () => { focusNick(b.dataset.n); sugg.hidden = true; q.value = ""; q.blur(); }));
+  sugg.innerHTML = hits.length ? hits.map((h) => `<button data-n="${esc(h.nick.toLowerCase())}">@${esc(h.nick)} <small>${esc(h.place || NAMES[h.region])}</small></button>`).join("") : `<div class="none">Topilmadi. <a href="#" id="getFromSearch">Uy olish →</a></div>`;
+  sugg.hidden = false; const gs = document.getElementById("getFromSearch"); if (gs) gs.onclick = (e) => { e.preventDefault(); sugg.hidden = true; openGet(null); };
+  sugg.querySelectorAll("button").forEach((b) => (b.onclick = () => { focusNick(b.dataset.n); sugg.hidden = true; q.value = ""; q.blur(); }));
 };
 q.onkeydown = (e) => { if (e.key === "Enter") { const b = sugg.querySelector("button"); if (b) b.click(); } if (e.key === "Escape") { sugg.hidden = true; q.blur(); } };
 document.addEventListener("pointerdown", (e) => { if (!e.target.closest(".search")) sugg.hidden = true; });
