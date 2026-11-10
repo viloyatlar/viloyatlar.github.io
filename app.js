@@ -272,4 +272,4 @@ renderer.setAnimationLoop(() => {
   controls.update(); renderer.render(scene, camera); updateLabels();
 });
 controls.addEventListener("start", () => (fly = null));
-document.getElementById("loading").classList.add("done");
+{ const ld = document.getElementById("loading"); ld.classList.add("done"); setTimeout(() => ld.remove(), 500); }
