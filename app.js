@@ -5,7 +5,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { tierOf, makeTier, makeTree, makeHouse } from "./tiers.js";
+import { tierOf, makeTier, makeTree, makeHouse, makeCar } from "./tiers.js";
 import { initUI, openGet, openShop, shopFrame } from "./ui.js";
 
 const NAMES = { QQR: "Qoraqalpog‘iston", NAV: "Navoiy", BUX: "Buxoro", XOR: "Xorazm", SAM: "Samarqand", JIZ: "Jizzax", SIR: "Sirdaryo", TOV: "Toshkent viloyati", TSH: "Toshkent shahri", NAM: "Namangan", AND: "Andijon", FAR: "Farg‘ona", QAS: "Qashqadaryo", SUR: "Surxondaryo" };
@@ -140,6 +140,7 @@ function buildCity(id) {
   let bi = 0; const queue = [];
   for (const h of list) if (h.kind === "palace") {
     const [cx, cz] = used[bi++]; const p = makePalace(); p.scale.setScalar(1.45); p.position.set(cx, TOP + 0.16, cz); p.userData.nick = h.nick; g.add(p);
+    if (h.gift === "car") { const car = shadowAll(makeCar("#E3262F", true)); car.scale.setScalar(2.2); car.position.set(cx + 4.6, TOP + 0.16, cz + 3.4); car.rotation.y = -0.4; g.add(car); }
     spots[h.nick.toLowerCase()] = { h, pos: new THREE.Vector3(cx, TOP, cz), height: 6.6 };
   }
   for (; bi < used.length; bi++) { const [cx, cz] = used[bi]; for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) queue.push([cx + (c - 1) * LOT, cz + (r - 0.5) * LOT, r]); }
@@ -147,9 +148,9 @@ function buildCity(id) {
   for (const h of list) {
     if (h.kind === "palace") continue;
     const [x, z, row] = queue[qi++]; const t = tierOf(h.tier); const s = Math.min(2.0, (LOT - 0.5) / t.plot);
-    const o = shadowAll(makeTier(h.tier || "oddiy", { roof: h.roof, wall: h.wall, car: h.car })); o.scale.setScalar(s); o.position.set(x, TOP + 0.16, z); o.rotation.y = row ? 0 : Math.PI; o.userData.nick = h.nick; g.add(o);
+    const o = shadowAll(makeTier(h.tier || "oddiy", { roof: h.roof, wall: h.wall, car: h.car })); o.scale.setScalar(s); o.position.set(x, TOP + 0.16, z); o.rotation.y = 0; // every house faces the default camera (south) o.userData.nick = h.nick; g.add(o);
     const lawn = new THREE.Mesh(new THREE.BoxGeometry(LOT - 0.3, 0.04, LOT - 0.3), grass); lawn.position.set(x, TOP + 0.17, z); lawn.receiveShadow = true; g.add(lawn);
-    spots[h.nick.toLowerCase()] = { h, pos: new THREE.Vector3(x, TOP + 0.16, z), height: ({ villa: 1.9, hovli: 1.5, rangli: 1.5, oddiy: 1.5 }[h.tier || "oddiy"]) * s };
+    spots[h.nick.toLowerCase()] = { h, pos: new THREE.Vector3(x, TOP + 0.16, z), height: ({ villa: 1.9, hovli: 1.5, rangli: 1.5, oddiy: 1.5, uy2: 1.9, oquy: 1.5 }[h.tier || "oddiy"] ?? 1.6) * s };
   }
   for (; qi < queue.length; qi++) { const [x, z] = queue[qi]; const lawn = new THREE.Mesh(new THREE.BoxGeometry(LOT - 0.3, 0.04, LOT - 0.3), grass); lawn.position.set(x, TOP + 0.17, z); g.add(lawn); if (qi % 2 === 0) { const tr = shadowAll(makeTree(1.6)); tr.position.set(x + (rnd() - 0.5), TOP + 0.18, z + (rnd() - 0.5)); g.add(tr); } }
   // scattered trees on the rest of the land

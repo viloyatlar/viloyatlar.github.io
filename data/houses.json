@@ -2,7 +2,7 @@
   "_izoh": "Har qismdan keyin yangi obunachilarni qo'shing. kind: house | palace. at (ixtiyoriy) = [x, z]: x=(lon-64.495)*7.493, z=-(lat-41.40)*10. at bo'lmasa uy viloyat ichida avtomatik joylashadi.",
   "updated": "2026-11-10",
   "instagram": "negachi.uz",
-  "post": "https://www.instagram.com/reel/DfjVlNksrVv/",
+  "post": "https://www.instagram.com/reel/DfjmbHzMf5A/",
   "_post_izoh": "post = izoh yoziladigan eng oxirgi reels havolasi (har yangi qismdan keyin yangilang)",
   "houses": [
     {
@@ -26,7 +26,56 @@
       ],
       "kind": "palace",
       "note": "Prezident uyi",
-      "qism": 2
+      "qism": 2,
+      "gift": "car"
+    },
+    {
+      "nick": "m_u_r_o_d_j_o_n_919",
+      "region": "SAM",
+      "place": "Samarqand",
+      "at": [
+        18.2,
+        17
+      ],
+      "kind": "house",
+      "tier": "oquy",
+      "note": "Oq uy",
+      "qism": 3
+    },
+    {
+      "nick": "umar.cik.1",
+      "region": "SAM",
+      "place": "Samarqand",
+      "at": [
+        20.6,
+        18.2
+      ],
+      "kind": "house",
+      "qism": 3
+    },
+    {
+      "nick": "_azatbaeviccc_",
+      "region": "QQR",
+      "place": "Nukus",
+      "at": [
+        -33.4,
+        -9.2
+      ],
+      "kind": "house",
+      "tier": "uy2",
+      "note": "2 qavatli",
+      "qism": 3
+    },
+    {
+      "nick": "yoldoshev_172",
+      "region": "XOR",
+      "place": "Urganch",
+      "at": [
+        -29,
+        -1.5
+      ],
+      "kind": "house",
+      "qism": 3
     }
   ]
 }

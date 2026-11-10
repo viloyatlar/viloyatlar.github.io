@@ -8,7 +8,12 @@ export const TIERS = [
   { id: "hovli", name: "Hovli", price: "Tez orada", items: ["Katta uy + devor va darvoza", "Hovlida mashina", "So‘ri, daraxtlar"], plot: 3.0 },
   { id: "villa", name: "Villa", price: "Tez orada", items: ["2 qavatli zamonaviy villa", "Hovuz va sport mashina", "Kechki chiroqlar", "Videoda alohida ko‘rsatiladi"], plot: 3.8 },
 ];
-export const tierOf = (id) => TIERS.find((t) => t.id === id) || TIERS[0];
+// special one-off homes requested in comments (not sold in the shop)
+export const SPECIAL = [
+  { id: "uy2", name: "Ikki qavatli uy", price: "", items: [], plot: 1.7 },
+  { id: "oquy", name: "Oq uy", price: "", items: [], plot: 2.6 },
+];
+export const tierOf = (id) => TIERS.find((t) => t.id === id) || SPECIAL.find((t) => t.id === id) || TIERS[0];
 
 const cache = {};
 const M = (c, r = 0.7, extra = {}) => (cache[c + r + JSON.stringify(extra)] ??= new THREE.MeshStandardMaterial({ color: c, roughness: r, ...extra }));
@@ -107,6 +112,32 @@ export function makeTier(tier = "oddiy", o = {}) {
     for (const [x, z] of [[1.75, -1.35], [-1.75, -1.4], [1.75, 0.0]]) { const t = makeTree(1.15, "#2F8F48"); t.position.set(x, 0.08, z); g.add(t); }
     for (const [x, z] of [[-0.3, 1.45], [0.3, 1.45], [-1.75, 1.45], [1.75, 1.45]]) { const l = lamp(); l.position.set(x, 0.08, z); g.add(l); }
     for (let i = 0; i < 9; i++) mesh(g, box(0.36, 0.22, 0.2, 0.06), M("#3E8E4A", 0.95), -1.75 + i * 0.44, 0.19, -1.5); // hedge
+  } else if (tier === "uy2") { // two-storey family house with a balcony
+    g.add(plotBase(1.7, 1.6));
+    const wall = M(o.wall || "#F3E6D3", 0.8), roofM = M(o.roof || "#3F6FB5", 0.6), glass = M("#2B3B4E", 0.2);
+    mesh(g, box(1.1, 1.2, 0.95, 0.05), wall, 0, 0.68, -0.1);
+    const rg = new THREE.CylinderGeometry(0.0001, 0.92, 0.55, 4, 1); rg.rotateY(Math.PI / 4);
+    mesh(g, rg, roofM, 0, 1.55, -0.1).scale.set(1.15, 1, 1.05);
+    for (const y of [0.45, 0.98]) for (const x of [-0.27, 0.27]) mesh(g, new THREE.BoxGeometry(0.24, 0.26, 0.02), glass, x, y, 0.38);
+    mesh(g, new THREE.BoxGeometry(0.22, 0.38, 0.02), M("#6B4226"), 0, 0.27, 0.381);
+    mesh(g, box(0.9, 0.05, 0.28, 0.02), M("#D9CDB8", 0.8), 0, 0.82, 0.5); // balcony
+    mesh(g, new THREE.BoxGeometry(0.9, 0.14, 0.02), M("#FFFFFF", 0.5), 0, 0.91, 0.64);
+    const t = makeTree(0.9); t.position.set(0.66, 0.08, 0.45); g.add(t);
+  } else if (tier === "oquy") { // "Oq uy": white mansion with a columned portico
+    g.add(plotBase(2.6, 2.1, "#88C96E"));
+    const white = M("#FBFAF6", 0.45), roofM = M("#C8CDD3", 0.5), glass = M("#2B3B4E", 0.2);
+    mesh(g, box(2.0, 0.9, 1.0, 0.04), white, 0, 0.53, -0.35);
+    mesh(g, box(2.1, 0.12, 1.1, 0.03), roofM, 0, 1.04, -0.35);
+    for (const x of [-0.75, -0.45, 0.45, 0.75]) for (const y of [0.35, 0.72]) mesh(g, new THREE.BoxGeometry(0.16, 0.22, 0.02), glass, x, y, 0.16);
+    mesh(g, box(0.9, 0.08, 0.5, 0.02), white, 0, 0.12, 0.38); // steps
+    for (let i = 0; i < 4; i++) mesh(g, new THREE.CylinderGeometry(0.05, 0.06, 0.82, 12), white, -0.3 + i * 0.2, 0.55, 0.42);
+    const ped = mesh(g, new THREE.CylinderGeometry(0.0001, 1, 1, 3), white, 0, 1.12, 0.38); ped.scale.set(0.62, 0.22, 0.25); ped.rotation.x = Math.PI / 2; ped.rotation.z = Math.PI;
+    mesh(g, box(0.95, 0.07, 0.4, 0.02), white, 0, 0.98, 0.38);
+    mesh(g, new THREE.BoxGeometry(0.2, 0.36, 0.02), M("#3A2A1E"), 0, 0.3, 0.16);
+    for (const x of [-1.05, 1.05]) { const t = makeTree(0.9); t.position.set(x, 0.08, 0.55); g.add(t); }
+    mesh(g, new THREE.CylinderGeometry(0.28, 0.32, 0.08, 24), M("#7FC37A", 0.9), 0, 0.12, 0.85); // round lawn
+    mesh(g, new THREE.CylinderGeometry(0.012, 0.012, 0.7, 6), M("#9CA3AF", 0.4), 0, 0.45, 0.85); // flag pole
+    mesh(g, new THREE.BoxGeometry(0.22, 0.13, 0.01), M("#22C55E", 0.6), 0.11, 0.73, 0.85);
   } else {
     const h = makeHouse(o); g.add(h);
   }
