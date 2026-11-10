@@ -2,6 +2,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
+import { TIERS, tierOf, makeTier, ROOFS, WALLS } from "./tiers.js";
 
 const NAMES = { QQR: "Qoraqalpog‘iston", NAV: "Navoiy", BUX: "Buxoro", XOR: "Xorazm", SAM: "Samarqand", JIZ: "Jizzax", SIR: "Sirdaryo", TOV: "Toshkent viloyati", TSH: "Toshkent shahri", NAM: "Namangan", AND: "Andijon", FAR: "Farg‘ona", QAS: "Qashqadaryo", SUR: "Surxondaryo" };
 const COL = { QQR: "#E3C78F", NAV: "#EFB27A", BUX: "#E59A6E", XOR: "#7FC37A", SAM: "#6DB4D8", JIZ: "#C7D46E", SIR: "#9AD07C", TOV: "#63B07A", TSH: "#F2C14E", NAM: "#86C9A8", AND: "#7DC860", FAR: "#B9A6E0", QAS: "#E8B24F", SUR: "#D98C8C" };
@@ -12,7 +13,7 @@ const HOUSES = DATA.houses.slice();
 const IG = DATA.instagram || "negachi.uz", INSTAGRAM = "https://www.instagram.com/" + IG + "/", POST = DATA.post || INSTAGRAM;
 // ?demo=300 — preview with fake residents (to see how crowded regions look); never shown without the parameter
 const DEMO = Number(new URLSearchParams(location.search).get("demo") || 0);
-if (DEMO) { const ids = ["TSH", "TSH", "TSH", "SAM", "SAM", "FAR", "AND", "NAM", "TOV", "QAS", "SUR", "BUX", "XOR", "NAV", "JIZ", "SIR", "QQR"]; for (let i = 0; i < DEMO; i++) HOUSES.push({ nick: "demo_" + (i + 1), region: ids[(i * 7 + (i % 5)) % ids.length], kind: "house", demo: true }); }
+if (DEMO) { const ids = ["TSH", "TSH", "TSH", "SAM", "SAM", "FAR", "AND", "NAM", "TOV", "QAS", "SUR", "BUX", "XOR", "NAV", "JIZ", "SIR", "QQR"]; for (let i = 0; i < DEMO; i++) HOUSES.push({ nick: "demo_" + (i + 1), region: ids[(i * 7 + (i % 5)) % ids.length], kind: "house", tier: ["villa", "hovli", "hovli", "rangli", "rangli", "rangli"][i % 23] || "oddiy", demo: true }); }
 
 // ---------------------------------------------------------------- renderer / scene
 const canvas = document.getElementById("c");
@@ -101,28 +102,45 @@ const SPOTS = {}; // nick -> {pos, region, obj}
 for (const reg of Object.values(R)) {
   const list = reg.houses; if (!list.length) continue;
   const used = [];
+  const RANKT = { villa: 3, hovli: 2, rangli: 1, oddiy: 0 };
+  const radius = (h, scale) => (h.kind === "palace" ? 5 : (tierOf(h.tier).plot * scale) / 2);
   const place = (h, p, scale) => {
-    const obj = h.kind === "palace" ? makePalace() : makeHouse();
-    obj.scale.setScalar(h.kind === "palace" ? 1.25 : scale); obj.position.set(p[0], TOP, p[1]); obj.rotation.y = (rnd() - 0.5) * 0.7; scene.add(obj);
-    used.push({ p, r: h.kind === "palace" ? 5 : scale });
-    SPOTS[h.nick.toLowerCase()] = { h, pos: new THREE.Vector3(p[0], TOP, p[1]), height: h.kind === "palace" ? 6.2 : scale * 1.5, region: reg.id };
+    const obj = h.kind === "palace" ? makePalace() : makeTier(h.tier || "oddiy", { roof: h.roof, wall: h.wall, car: h.car });
+    obj.scale.setScalar(h.kind === "palace" ? 1.25 : scale); obj.position.set(p[0], TOP, p[1]); obj.rotation.y = (rnd() - 0.5) * 0.7;
+    obj.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); scene.add(obj);
+    used.push({ p, r: radius(h, scale) });
+    const ht = h.kind === "palace" ? 6.2 : { villa: 1.9, hovli: 1.6, rangli: 1.5, oddiy: 1.5 }[h.tier || "oddiy"] * scale;
+    SPOTS[h.nick.toLowerCase()] = { h, pos: new THREE.Vector3(p[0], TOP, p[1]), height: ht, region: reg.id };
   };
-  const auto = list.filter((h) => !(h.at && inside(h.at, reg.ring)));
+  const auto = list.filter((h) => !(h.at && inside(h.at, reg.ring))).sort((a, b) => (RANKT[b.tier] || 0) - (RANKT[a.tier] || 0));
   const area = reg.size.x * reg.size.z;
-  // spacing shrinks as the region fills up; beyond capacity residents move into apartment blocks
-  let step = Math.max(1.4, Math.min(3.2, Math.sqrt(area / Math.max(1, auto.length * 6))));
+  // spacing shrinks as the region fills up; beyond capacity plain houses move into apartment blocks (decorated tiers always keep their plot)
+  const load = auto.reduce((n, h) => n + Math.pow(tierOf(h.tier).plot / 1.2, 2), 0);
+  const step = Math.max(1.4, Math.min(3.2, Math.sqrt(area / Math.max(1, load * 6))));
   const scale = Math.max(0.7, Math.min(1.6, step * 0.55));
   list.filter((h) => h.at && inside(h.at, reg.ring)).forEach((h) => place(h, h.at, 1.6));
   const cand = [];
-  for (let x = reg.box.min.x; x <= reg.box.max.x; x += step) for (let z = reg.box.min.z; z <= reg.box.max.z; z += step * 0.9) {
-    const p = [x + (rnd() - 0.5) * step * 0.3, z + (rnd() - 0.5) * step * 0.3];
-    if (inside(p, reg.ring) && edgeDist(p, reg.ring) > step * 0.45 && used.every((u) => Math.hypot(u.p[0] - p[0], u.p[1] - p[1]) > step * 0.8 + u.r * 0.5)) cand.push(p);
+  for (let x = reg.box.min.x; x <= reg.box.max.x; x += step * 0.5) for (let z = reg.box.min.z; z <= reg.box.max.z; z += step * 0.45) {
+    const p = [x + (rnd() - 0.5) * step * 0.15, z + (rnd() - 0.5) * step * 0.15];
+    if (inside(p, reg.ring) && edgeDist(p, reg.ring) > step * 0.45) cand.push(p);
   }
   cand.sort((a, b) => Math.hypot(a[0] - reg.anchor.x, a[1] - reg.anchor.z) - Math.hypot(b[0] - reg.anchor.x, b[1] - reg.anchor.z));
-  if (auto.length <= cand.length) auto.forEach((h, i) => place(h, cand[i], scale));
-  else { // crowded: blocks of 20 residents, each resident gets a spot label on its block
-    for (let b = 0; b * 20 < auto.length; b++) {
-      const group = auto.slice(b * 20, b * 20 + 20), p = cand[b % Math.max(1, cand.length)] || [reg.anchor.x, reg.anchor.z];
+  const free = (p, r) => edgeDist(p, reg.ring) > r * 0.8 && used.every((u) => Math.hypot(u.p[0] - p[0], u.p[1] - p[1]) > Math.max(step * 0.8, (r + u.r) * 0.95));
+  // last resort: golden-angle spiral from the region anchor (works even in tiny regions like Toshkent shahri)
+  const spiral = (r) => { for (let i = 0; i < 900; i++) { const a = i * 2.39996, d = 0.35 * Math.sqrt(i), p = [reg.anchor.x + Math.cos(a) * d, reg.anchor.z + Math.sin(a) * d]; if (inside(p, reg.ring) && used.every((u) => Math.hypot(u.p[0] - p[0], u.p[1] - p[1]) > (r + u.r) * 0.85)) return p; } return null; };
+  const leftover = [];
+  for (const h of auto) {
+    const r = radius(h, scale), p = cand.find((c) => free(c, r)); if (p) { place(h, p, scale); continue; }
+    if ((h.tier || "oddiy") !== "oddiy") { // a decorated home never goes into a block: shrink it until it fits
+      let k = 0.75, q = null; while (k > 0.3 && !(q = cand.find((c) => free(c, r * k)))) k -= 0.1;
+      const sk = scale * Math.max(0.35, k); place(h, q || spiral(radius(h, sk)) || [reg.anchor.x, reg.anchor.z], sk); continue;
+    }
+    leftover.push(h);
+  }
+  if (leftover.length) { // crowded: blocks of 20 residents, each resident gets a spot label on its block
+    for (let b = 0; b * 20 < leftover.length; b++) {
+      const group = leftover.slice(b * 20, b * 20 + 20), p = cand.find((c) => free(c, 1)) || spiral(0.9) || [reg.anchor.x, reg.anchor.z];
+      used.push({ p, r: 1 });
       const blk = makeBlock(Math.ceil(group.length / 2)); blk.position.set(p[0], TOP, p[1]); scene.add(blk);
       group.forEach((h, k) => (SPOTS[h.nick.toLowerCase()] = { h, pos: new THREE.Vector3(p[0], TOP + Math.floor(k / 2) * 0.42, p[1]), height: 0.6, region: reg.id }));
     }
@@ -209,10 +227,11 @@ function showBoard() {
   const shown = boardAll ? RANK : RANK.slice(0, 5);
   const rows = shown.map((id, i) => `<div class="row${COUNT[id] ? "" : " zero"}" data-r="${id}"><div class="n${i === 0 && COUNT[id] ? " first" : ""}">${i + 1}</div><div class="name">${NAMES[id]}</div><div class="bar"><div style="width:${(COUNT[id] / mx) * 100}%"></div></div><div class="v">${COUNT[id]}</div></div>`).join("");
   body.innerHTML = `<h2>🏆 Peshqadamlar</h2><div class="sub">Viloyatni bosing — qo‘shnilaringizni ko‘ring</div>${rows}<button class="more" id="more">${boardAll ? "Qisqartirish ▲" : "Barcha 14 viloyat ▼"}</button>
-    <div class="btns"><button class="btn primary get">＋ Uy olish</button></div>`;
+    <div class="btns"><button class="btn ghost shop">✨ Uyingizni bezang</button><button class="btn primary get">＋ Uy olish</button></div>`;
   body.querySelectorAll(".row").forEach((r) => (r.onclick = () => selectRegion(r.dataset.r)));
   document.getElementById("more").onclick = () => { boardAll = !boardAll; showBoard(); };
   body.querySelector(".get").onclick = () => openGet(null);
+  body.querySelector(".shop").onclick = () => openShop("villa");
   setSheetH();
 }
 function selectRegion(id, keepMe = false) {
@@ -253,11 +272,12 @@ function openGet(regionId) {
       <li><b>Izohga viloyatingizni yozing</b><span>Oxirgi videoga — masalan, “Samarqand 🏠”</span>
         <div class="pick"><select id="greg"><option value="">Viloyatni tanlang…</option>${opts}</select></div>
         <a class="btn ig" id="g2" href="${POST}" target="_blank" rel="noopener">Nusxalash va izoh yozish</a><small id="gcopy" hidden>Nusxalandi — izohga joylang ✓</small></li>
-      <li><b>Uyingiz quriladi</b><span>Keyingi qismda videoda ko‘rsatiladi va shu xaritaga qo‘shiladi. Nikingizni qidiruvda tekshirib turing!</span></li>
+      <li><b>Uyingiz quriladi</b><span>Keyingi qismda videoda ko‘rsatiladi va shu xaritaga qo‘shiladi. Nikingizni qidiruvda tekshirib turing!</span><a href="#" class="tolink" id="g3">✨ Chiroyliroq uy: hovli, mashina, villa →</a></li>
     </ol></div>`;
   getEl.hidden = false;
   const close = () => (getEl.hidden = true);
   getEl.querySelector(".x").onclick = close; getEl.onclick = (e) => { if (e.target === getEl) close(); };
+  getEl.querySelector("#g3").onclick = (e) => { e.preventDefault(); close(); openShop("hovli"); };
   getEl.querySelector("#g1").onclick = () => { store.set("vb_follow", "1"); getEl.querySelector(".steps li").classList.add("ok"); };
   getEl.querySelector("#g2").onclick = () => {
     const id = getEl.querySelector("#greg").value; if (id) store.set("vb_region", id);
@@ -266,6 +286,60 @@ function openGet(regionId) {
   };
 }
 addEventListener("keydown", (e) => { if (e.key === "Escape") getEl.hidden = true; });
+
+// ---------------------------------------------------------------- "Uyingizni bezang": live 3D preview of every tier
+const shopEl = document.getElementById("shop"); let shop = null;
+function shopScene() {
+  const cv = shopEl.querySelector("canvas"), r = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
+  r.setPixelRatio(Math.min(devicePixelRatio, 2)); r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+  r.toneMapping = THREE.ACESFilmicToneMapping; r.outputColorSpace = THREE.SRGBColorSpace;
+  const sc = new THREE.Scene(); sc.add(new THREE.HemisphereLight("#F2FAFF", "#6B5E4E", 1.05));
+  const l = new THREE.DirectionalLight("#FFF1DC", 2.4); l.position.set(-4, 8, 5); l.castShadow = true; l.shadow.mapSize.set(1024, 1024); Object.assign(l.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4 }); sc.add(l);
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(2.9, 3.0, 0.3, 64), new THREE.MeshStandardMaterial({ color: "#E3C78F", roughness: 0.9 })); disc.position.y = -0.15; disc.receiveShadow = true; sc.add(disc);
+  const cam = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+  return { r, sc, cam, obj: null, t0: performance.now() };
+}
+function setShopModel(tier, opts) {
+  if (shop.obj) shop.sc.remove(shop.obj);
+  const o = makeTier(tier, opts); o.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+  const k = 3.6 / Math.max(1.6, tierOf(tier).plot); o.scale.setScalar(Math.min(1.8, k)); shop.sc.add(o); shop.obj = o;
+}
+function openShop(tierId = "villa") {
+  let cur = tierId, roof = ROOFS[1], wall = WALLS[2];
+  shopEl.innerHTML = `<div class="modal shopm" role="dialog" aria-modal="true" aria-labelledby="st">
+    <button class="x" aria-label="Yopish">✕</button>
+    <h3 id="st">✨ Uyingizni bezang</h3>
+    <div class="stage"><canvas></canvas><span class="soon">Tez orada</span></div>
+    <div class="tabs">${TIERS.map((t) => `<button data-t="${t.id}">${t.name}</button>`).join("")}</div>
+    <div class="tinfo"></div>
+    <a class="btn ig" href="${INSTAGRAM}" target="_blank" rel="noopener">Birinchilardan bo‘lish uchun obuna bo‘ling</a>
+    <p class="fine">Viloyatlar bellashuvida har bir uy 1 ball — bezak reytingga ta’sir qilmaydi.</p></div>`;
+  shopEl.hidden = false;
+  shop = shopScene();
+  const info = shopEl.querySelector(".tinfo");
+  const render = () => {
+    const t = tierOf(cur);
+    shopEl.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("on", b.dataset.t === cur));
+    info.innerHTML = `<div class="tp"><b>${t.name}</b><span>${t.price}</span></div><ul>${t.items.map((i) => `<li>${i}</li>`).join("")}</ul>` +
+      (cur === "rangli" ? `<div class="sw"><small>Tom:</small>${ROOFS.map((c) => `<button data-roof="${c}" style="background:${c}" class="${c === roof ? "on" : ""}"></button>`).join("")}</div><div class="sw"><small>Devor:</small>${WALLS.map((c) => `<button data-wall="${c}" style="background:${c}" class="${c === wall ? "on" : ""}"></button>`).join("")}</div>` : "");
+    info.querySelectorAll("[data-roof]").forEach((b) => (b.onclick = () => { roof = b.dataset.roof; render(); }));
+    info.querySelectorAll("[data-wall]").forEach((b) => (b.onclick = () => { wall = b.dataset.wall; render(); }));
+    setShopModel(cur, cur === "rangli" ? { roof, wall } : {});
+  };
+  shopEl.querySelectorAll(".tabs button").forEach((b) => (b.onclick = () => { cur = b.dataset.t; render(); }));
+  const close = () => { shopEl.hidden = true; shop.r.dispose(); shop = null; };
+  shopEl.querySelector(".x").onclick = close; shopEl.onclick = (e) => { if (e.target === shopEl) close(); };
+  render();
+}
+function shopFrame() {
+  if (!shop) return;
+  const cv = shop.r.domElement, w = cv.clientWidth, h = cv.clientHeight;
+  if (cv.width !== Math.floor(w * shop.r.getPixelRatio())) { shop.r.setSize(w, h, false); shop.cam.aspect = w / h; shop.cam.updateProjectionMatrix(); }
+  const a = 0.35 + 0.75 * Math.sin(((performance.now() - shop.t0) / 1000) * 0.45); // swing around the front, never the back
+  shop.cam.position.set(Math.sin(a) * 8.6, 5.0, Math.cos(a) * 8.6); shop.cam.lookAt(0, 0.6, 0);
+  shop.r.render(shop.sc, shop.cam);
+}
+addEventListener("keydown", (e) => { if (e.key === "Escape" && shop) shopEl.querySelector(".x").click(); });
 
 // ---------------------------------------------------------------- search
 const q = document.getElementById("q"), sugg = document.getElementById("sugg");
@@ -302,7 +376,7 @@ renderer.setAnimationLoop(() => {
     const k = Math.min(1, (performance.now() - fly.start) / fly.dur), e = ease(k);
     camera.position.lerpVectors(fly.p0, fly.p1, e); controls.target.lerpVectors(fly.t0, fly.t1, e); if (k >= 1) fly = null;
   }
-  controls.update(); renderer.render(scene, camera); updateLabels();
+  controls.update(); renderer.render(scene, camera); updateLabels(); shopFrame();
 });
 controls.addEventListener("start", () => (fly = null));
 { const ld = document.getElementById("loading"); ld.classList.add("done"); setTimeout(() => ld.remove(), 500); }
