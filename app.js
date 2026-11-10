@@ -193,6 +193,7 @@ function buildCity(id) {
     const lawn = new THREE.Mesh(new THREE.BoxGeometry(LOT - 0.3, 0.04, LOT - 0.3), grass); lawn.position.set(x, TOP + 0.17, z); lawn.receiveShadow = true; g.add(lawn);
     spots[h.nick.toLowerCase()] = { h, pos: new THREE.Vector3(x, TOP + 0.16, z), height: ({ villa: 1.9, hovli: 1.5, rangli: 1.5, oddiy: 1.5, uy2: 1.9, oquy: 1.5 }[h.tier || "oddiy"] ?? 1.6) * s };
   }
+  const free = queue.slice(qi).map(([x, z]) => [x, z]);
   for (; qi < queue.length; qi++) { // spare plots: grass, a green "free plot" sign here and there, some trees
     const [x, z] = queue[qi]; const lawn = new THREE.Mesh(new THREE.BoxGeometry(LOT - 0.3, 0.04, LOT - 0.3), grass); lawn.position.set(x, TOP + 0.17, z); lawn.receiveShadow = true; g.add(lawn);
     if (rnd() < 0.45) { const tr = shadowAll(makeTree(1.3 + rnd() * 0.6)); tr.position.set(x + (rnd() - 0.5) * 1.6, TOP + 0.18, z + (rnd() - 0.5) * 1.6); g.add(tr); }
@@ -231,7 +232,7 @@ function buildCity(id) {
   if (!used.length) { ux = -20; uX = 20; uz = -20; uZ = 20; }
   // the opening shot frames the homes (+ a little of the neighbourhood); the camera may roam over the whole city
   let hx0 = Infinity, hX = -Infinity, hz0 = Infinity, hZ = -Infinity; used.slice(0, Math.max(resBlocks, 4)).forEach(([cx, cz]) => { hx0 = Math.min(hx0, cx - PX / 2); hX = Math.max(hX, cx + PX / 2); hz0 = Math.min(hz0, cz - PZ / 2); hZ = Math.max(hZ, cz + PZ / 2); });
-  const c = { id, g, spots, anim, bounds: { x0: Math.min(xs, ux), x1: Math.max(xe, uX), z0: Math.min(zs, uz), z1: Math.max(ze, uZ) }, focus: { x0: hx0 - PX * 0.6, x1: hX + PX * 0.6, z0: hz0 - PZ * 0.6, z1: hZ + PZ * 0.6 } };
+  const c = { id, g, spots, anim, free, bounds: { x0: Math.min(xs, ux), x1: Math.max(xe, uX), z0: Math.min(zs, uz), z1: Math.max(ze, uZ) }, focus: { x0: hx0 - PX * 0.6, x1: hX + PX * 0.6, z0: hz0 - PZ * 0.6, z1: hZ + PZ * 0.6 } };
   g.visible = false; scene.add(g); cities[id] = c; return c;
 }
 
@@ -411,3 +412,26 @@ renderer.setAnimationLoop(() => {
 });
 controls.addEventListener("start", () => (fly = null));
 { const ld = document.getElementById("loading"); ld.classList.add("done"); setTimeout(() => ld.remove(), 500); }
+
+// ---------------------------------------------------------------- ?rec=1 : deterministic recorder (films reels from the real site, frame by frame)
+if (new URLSearchParams(location.search).has("rec")) {
+  document.body.classList.add("rec"); renderer.setAnimationLoop(null);
+  const RW = 1080, RH = 1920; renderer.setPixelRatio(1); renderer.setSize(RW, RH, false); canvas.style.width = RW + "px"; canvas.style.height = RH + "px";
+  let villa = null, villaAt = 0;
+  const cam = (c) => { camera.clearViewOffset(); camera.aspect = RW / RH; camera.updateProjectionMatrix(); camera.position.set(c[0], c[1], c[2]); camera.lookAt(c[3], c[4], c[5]); };
+  window.REC = {
+    country() { if (city) exitCity(); fly = null; scene.fog.near = 380; scene.fog.far = 900; return { anchors: Object.fromEntries(Object.entries(R).map(([k, r]) => [k, [r.anchor.x, r.anchor.z]])) }; },
+    city(id) { enterCity(id); fly = null; const c = city; return { focus: c.focus, free: c.free.slice(0, 12), spots: Object.fromEntries(Object.entries(c.spots).map(([k, s]) => [k, [s.pos.x, s.pos.y, s.pos.z, s.height]])) }; },
+    villa(id, x, z, at) { const c = buildCity(id); if (villa) villa.parent.remove(villa); villa = shadowAll(makeTier("villa")); villa.scale.setScalar(1.05); villa.position.set(x, TOP + 0.16, z); c.g.add(villa); villaAt = at; },
+    noVilla() { if (villa) villa.parent.remove(villa); villa = null; },
+    frame(t, c, pts = []) {
+      cam(c); if (city && city.anim) city.anim(t);
+      if (villa) { const k = Math.max(0, Math.min(1, (t - villaAt) / 0.9)), e = 1 - Math.pow(1 - k, 3) * Math.cos(k * 5) * (1 - k); villa.visible = k > 0; villa.scale.set(1.05, 1.05 * Math.max(0.001, e), 1.05); }
+      renderer.render(scene, camera);
+      const img = canvas.toDataURL("image/jpeg", 0.92);
+      const proj = pts.map((p) => { const v = new THREE.Vector3(p[0], p[1], p[2]).project(camera); return [((v.x + 1) / 2) * RW, ((1 - v.y) / 2) * RH, v.z < 1]; });
+      return { img, proj };
+    },
+  };
+  window.REC_READY = true;
+}

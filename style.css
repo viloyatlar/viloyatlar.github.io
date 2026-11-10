@@ -133,3 +133,4 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); c
 .pill.deco { background: #EDE3FF; color: #5B21B6; }
 @media (min-width: 900px) { .crumb { top: 72px; left: 50%; transform: translateX(-50%); } }
 .nick.me { background: var(--green) !important; color: #fff !important; font-size: 14px; padding: 5px 12px; z-index: 3; }
+body.rec .top, body.rec .search, body.rec .sheet, body.rec .fabs, body.rec .crumb, body.rec #labels, body.rec .loading { display: none !important; } body.rec #c { position: static; }
