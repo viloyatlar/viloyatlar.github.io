@@ -181,7 +181,8 @@ function buildCity(id) {
   let bi = 0; const queue = [];
   for (const h of list) if (h.kind === "palace") {
     const [cx, cz] = used[bi++]; const p = makePalace(); p.scale.setScalar(1.45); p.position.set(cx, TOP + 0.16, cz); p.userData.nick = h.nick; g.add(p);
-    if (h.gift === "car") { const car = shadowAll(makeCar("#E3262F", true)); car.scale.setScalar(2.2); car.position.set(cx + 4.6, TOP + 0.16, cz + 3.4); car.rotation.y = -0.4; g.add(car); }
+    if (h.gift === "car") { const car = shadowAll(makeCar(h.carColor || "#E3262F", true)); car.scale.setScalar(2.2); car.position.set(cx + 4.6, TOP + 0.16, cz + 3.4); car.rotation.y = -0.4; g.add(car); }
+    if (h.sign) { const cv = document.createElement("canvas"); cv.width = 512; cv.height = 96; const x = cv.getContext("2d"); x.fillStyle = "#14213D"; x.fillRect(0, 0, 512, 96); x.strokeStyle = "#F5C542"; x.lineWidth = 8; x.strokeRect(4, 4, 504, 88); x.fillStyle = "#F5C542"; x.font = "900 60px Inter, Arial"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(h.sign, 256, 52); const tx = new THREE.CanvasTexture(cv); tx.colorSpace = THREE.SRGBColorSpace; const pl = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 0.64), new THREE.MeshStandardMaterial({ map: tx, roughness: 0.5 })); pl.position.set(cx, TOP + 0.16 + 3.75 * 1.45 * 0.8, cz + 2.2); g.add(pl); }
     spots[h.nick.toLowerCase()] = { h, pos: new THREE.Vector3(cx, TOP, cz), height: 6.6 };
   }
   used.forEach(([cx, cz], i) => { if (i < bi || role[i] === "park") return; for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) queue.push([cx + (c - 1) * LOT, cz + (r - 0.5) * LOT, role[i]]); });

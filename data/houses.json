@@ -25,9 +25,11 @@
         -10.6
       ],
       "kind": "palace",
-      "note": "Prezident uyi",
+      "note": "Prezident uyi + qora mashina",
       "qism": 2,
-      "gift": "car"
+      "gift": "car",
+      "carColor": "#111827",
+      "sign": "PREZIDENT"
     },
     {
       "nick": "m_u_r_o_d_j_o_n_919",
@@ -344,7 +346,7 @@
       "note": "Bayroqli hovli"
     },
     {
-      "nick": "azatbayeww",
+      "nick": "azatbayewv",
       "region": "QQR",
       "place": "Nukus",
       "kind": "house",
@@ -457,9 +459,9 @@
       "region": "QQR",
       "place": "Nukus",
       "kind": "house",
-      "tier": "oquy",
+      "tier": "qasr",
       "qism": 6,
-      "note": "Oq uy"
+      "note": "Qasr"
     },
     {
       "nick": "umidjon__kichik_bloger10k",
@@ -578,6 +580,82 @@
       "kind": "house",
       "tier": "oddiy",
       "qism": 6
+    },
+    {
+      "nick": "safarbek_013",
+      "region": "TSH",
+      "place": "Toshkent",
+      "kind": "house",
+      "tier": "piramida",
+      "qism": 6,
+      "note": "Piramida minoralar"
+    },
+    {
+      "nick": "ergash_453",
+      "region": "SAM",
+      "place": "Samarqand",
+      "kind": "house",
+      "tier": "minora",
+      "qism": 6,
+      "floors": 7,
+      "wall": "#FBFAF6",
+      "note": "Oq 7 qavatli uy + BMW",
+      "gift": "car",
+      "carColor": "#2F6FD6"
+    },
+    {
+      "nick": "oydin7532",
+      "region": "NAV",
+      "place": "Navoiy",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 6
+    },
+    {
+      "nick": "usz_rustamov",
+      "region": "QQR",
+      "place": "Nukus",
+      "kind": "house",
+      "tier": "stadion",
+      "qism": 6,
+      "note": "Bank + futbol stadioni"
+    },
+    {
+      "nick": "aza1ovich_16_",
+      "region": "QQR",
+      "place": "Nukus",
+      "kind": "house",
+      "tier": "burj",
+      "qism": 6,
+      "note": "Stark binosi"
+    },
+    {
+      "nick": "maqsudquziyev07",
+      "region": "QAS",
+      "place": "Qashqadaryo",
+      "kind": "house",
+      "tier": "piramida",
+      "qism": 6,
+      "note": "Piramida"
+    },
+    {
+      "nick": "_yuldashe.1",
+      "region": "AND",
+      "place": "Andijon",
+      "kind": "house",
+      "tier": "muzey",
+      "qism": 6,
+      "note": "Prokuratura"
+    },
+    {
+      "nick": "saginbaeva_bibixan",
+      "region": "QQR",
+      "place": "Nukus",
+      "kind": "house",
+      "tier": "minora",
+      "qism": 6,
+      "floors": 9,
+      "note": "Katta dom"
     }
   ]
 }
