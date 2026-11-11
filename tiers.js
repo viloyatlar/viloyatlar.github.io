@@ -22,6 +22,10 @@ export const SPECIAL = [
   { id: "pisa", name: "Piza minorasi", price: "", items: [], plot: 1.6 },
   { id: "piramida", name: "Piramida", price: "", items: [], plot: 2.7 },
   { id: "eyfel", name: "Eyfel minorasi", price: "", items: [], plot: 2.2 },
+  { id: "teleminora", name: "Teleminora", price: "", items: [], plot: 1.8 },
+  { id: "egiz", name: "Egiz minoralar", price: "", items: [], plot: 2.2 },
+  { id: "stadion", name: "Stadion", price: "", items: [], plot: 3.4 },
+  { id: "devor", name: "Buyuk Xitoy devori", price: "", items: [], plot: 3.6 },
 ];
 export const tierOf = (id) => TIERS.find((t) => t.id === id) || SPECIAL.find((t) => t.id === id) || TIERS[0];
 
@@ -187,7 +191,7 @@ export function makeTier(tier = "oddiy", o = {}) {
     mesh(g, new THREE.BoxGeometry(0.8, 0.16, 0.02), M("#F5C542", 0.4), 0, 0.88, 0.49);
   } else if (tier === "qasr") { // castle: walls, four towers with cones, central keep
     g.add(plotBase(2.6, 2.4, "#9CC27E"));
-    const stone = M("#BDB5A6", 0.85), roofM = M("#7C3AED", 0.5);
+    const ark = o.kind2 === "ark", stone = M(ark ? "#D8B98A" : "#BDB5A6", 0.85), roofM = M(ark ? "#D8B98A" : "#7C3AED", 0.5);
     for (const [x, z, w, d] of [[0, -0.95, 2.0, 0.18], [0, 0.95, 2.0, 0.18], [-0.95, 0, 0.18, 2.0], [0.95, 0, 0.18, 2.0]]) mesh(g, box(w, 0.6, d, 0.02), stone, x, 0.38, z);
     for (const [x, z] of [[-0.95, -0.95], [0.95, -0.95], [-0.95, 0.95], [0.95, 0.95]]) { mesh(g, new THREE.CylinderGeometry(0.26, 0.28, 1.0, 16), stone, x, 0.58, z); mesh(g, new THREE.ConeGeometry(0.32, 0.5, 16), roofM, x, 1.33, z); }
     mesh(g, box(0.8, 1.4, 0.8, 0.03), stone, 0, 0.78, -0.1); mesh(g, new THREE.ConeGeometry(0.6, 0.7, 4), roofM, 0, 1.83, -0.1).rotation.y = Math.PI / 4;
@@ -231,6 +235,32 @@ export function makeTier(tier = "oddiy", o = {}) {
     const top = mesh(g, new THREE.CylinderGeometry(0.03, 0.15, 1.1, 4), iron, 0, 3.15, 0); top.rotation.y = Math.PI / 4;
     mesh(g, new THREE.CylinderGeometry(0.01, 0.02, 0.35, 6), M("#D1D5DB", 0.3), 0, 3.85, 0);
     for (let i = 0; i < 4; i++) { const a = mesh(g, new THREE.TorusGeometry(0.42, 0.03, 6, 16, Math.PI), iron, 0, 0.12, 0); a.rotation.y = (i * Math.PI) / 2; a.position.set(Math.sin((i * Math.PI) / 2) * 0.62, 0.42, Math.cos((i * Math.PI) / 2) * 0.62); }
+  } else if (tier === "teleminora") { // Tashkent-style TV tower: tripod base, slim shaft, observation pod, mast
+    g.add(plotBase(1.8, 1.8, "#9BD07A"));
+    const steel = M("#C9CED6", 0.35), red = M("#C0392B", 0.5);
+    for (let i = 0; i < 3; i++) { const a = (i / 3) * Math.PI * 2, l = mesh(g, new THREE.CylinderGeometry(0.05, 0.08, 1.4, 8), steel, Math.cos(a) * 0.32, 0.72, Math.sin(a) * 0.32); l.rotation.z = Math.cos(a) * 0.32; l.rotation.x = -Math.sin(a) * 0.32; }
+    mesh(g, new THREE.CylinderGeometry(0.1, 0.14, 2.6, 12), steel, 0, 2.6, 0);
+    mesh(g, new THREE.SphereGeometry(0.34, 20, 14), M("#2B6E8F", 0.25), 0, 3.4, 0).scale.set(1, 0.6, 1);
+    mesh(g, new THREE.CylinderGeometry(0.36, 0.36, 0.06, 20), steel, 0, 3.4, 0);
+    for (let i = 0; i < 4; i++) mesh(g, new THREE.CylinderGeometry(0.035, 0.035, 0.3, 8), i % 2 ? steel : red, 0, 4.0 + i * 0.3, 0);
+  } else if (tier === "egiz") { // two glass skyscrapers
+    g.add(plotBase(2.2, 2.2, "#D9D2C4"));
+    const glass = new THREE.MeshStandardMaterial({ color: "#C9D6E2", roughness: 0.2, metalness: 0.35 });
+    for (const x of [-0.45, 0.45]) { mesh(g, box(0.62, 3.6, 0.62, 0.02), glass, x, 1.88, x * 0.4); for (let f = 0; f < 18; f++) mesh(g, new THREE.BoxGeometry(0.64, 0.015, 0.64), M("#8C99A6", 0.5), x, 0.2 + f * 0.2, x * 0.4); }
+    mesh(g, new THREE.CylinderGeometry(0.015, 0.02, 0.7, 6), M("#D1D5DB", 0.3), -0.45, 4.05, -0.18);
+  } else if (tier === "stadion") { // oval football stadium
+    g.add(plotBase(3.4, 2.6, "#9BD07A"));
+    const bowl = new THREE.Group(); g.add(bowl);
+    for (let i = 0; i < 3; i++) mesh(bowl, new THREE.CylinderGeometry(1.45 - i * 0.18, 1.5 - i * 0.18, 0.28, 40, 1, true), M(["#E5E7EB", "#3B82F6", "#E5E7EB"][i], 0.6), 0, 0.22 + i * 0.26, 0);
+    bowl.scale.set(1, 1, 0.68);
+    const pitch = mesh(g, new THREE.CylinderGeometry(1.0, 1.0, 0.04, 40), M("#3FA34D", 0.9), 0, 0.12, 0); pitch.scale.set(1, 1, 0.62);
+    mesh(g, new THREE.BoxGeometry(1.2, 0.045, 0.02), M("#FFFFFF", 0.5), 0, 0.13, 0);
+    for (const [x, z] of [[-1.5, -1.0], [1.5, -1.0], [-1.5, 1.0], [1.5, 1.0]]) { mesh(g, new THREE.CylinderGeometry(0.03, 0.03, 1.4, 6), M("#9CA3AF", 0.4), x, 0.78, z); mesh(g, box(0.25, 0.14, 0.05, 0.02), new THREE.MeshStandardMaterial({ color: "#FFF6C8", emissive: "#FFE9A0", emissiveIntensity: 0.8 }), x, 1.5, z); }
+  } else if (tier === "devor") { // Great Wall segment with watchtowers
+    g.add(plotBase(3.6, 1.6, "#8FBF6A"));
+    const st = M("#B9A888", 0.9), top = M("#9E8E70", 0.9);
+    for (let i = 0; i < 4; i++) { const x = -1.35 + i * 0.9; mesh(g, box(0.9, 0.55 + (i % 2) * 0.12, 0.38, 0.02), st, x, 0.36 + (i % 2) * 0.06, (i % 2 ? 0.1 : -0.1)); for (let k = 0; k < 4; k++) mesh(g, new THREE.BoxGeometry(0.1, 0.1, 0.4), top, x - 0.33 + k * 0.22, 0.7 + (i % 2) * 0.12, (i % 2 ? 0.1 : -0.1)); }
+    for (const x of [-1.6, 0, 1.6]) { mesh(g, box(0.45, 0.95, 0.45, 0.02), st, x, 0.55, 0); mesh(g, new THREE.ConeGeometry(0.34, 0.3, 4), M("#7A3E2B", 0.6), x, 1.17, 0).rotation.y = Math.PI / 4; }
   } else if (tier === "hovli" && o.flags) {
     const h = makeTier("hovli", { ...o, flags: false }); g.add(h);
     const flag = (cols, x) => { mesh(g, new THREE.CylinderGeometry(0.02, 0.02, 1.4, 8), M("#D1D5DB", 0.3), x, 0.78, 1.0); cols.forEach((c, i) => mesh(g, new THREE.BoxGeometry(0.5, 0.1, 0.01), M(c, 0.6), x + 0.26, 1.38 - i * 0.1, 1.0)); };
