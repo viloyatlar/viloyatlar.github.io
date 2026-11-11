@@ -11,3 +11,5 @@ Yangi obunachi qo'shish: data/houses.json -> "houses" ro'yxatiga:
 Havola bilan uyni ochish: <sayt>/#instagram_nik   (masalan, izohga javob sifatida yuboring)
 Ko'p obunachi bilan sinash: <sayt>/?demo=300
 Lokal ko'rish: node serve.mjs  ->  http://localhost:5180
+
+KESH: kod o'zgarsa index.html dagi app.js/style.css va app.js/ui.js dagi importlardagi ?v=... raqamini yangilang (aks holda brauzer eski faylni ~10 daqiqa ishlatadi).
