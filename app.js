@@ -186,7 +186,7 @@ function buildCity(id) {
   }
   used.forEach(([cx, cz], i) => { if (i < bi || role[i] === "park") return; for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) queue.push([cx + (c - 1) * LOT, cz + (r - 0.5) * LOT, role[i]]); });
   // tall buildings take the back row of a block, low ones the front row, so nothing hides behind a tower
-  const TALL = new Set(["minora", "burj", "pisa", "tajmahal", "masjid", "qasr", "uy2"]), usedQ = new Set();
+  const TALL = new Set(["minora", "burj", "pisa", "tajmahal", "masjid", "qasr", "uy2", "eyfel", "piramida"]), usedQ = new Set();
   const lotFor = (h) => { const back = TALL.has(h.tier); let k = queue.findIndex((q, i) => !usedQ.has(i) && (((i % 6) < 3) === back)); if (k < 0) k = queue.findIndex((q, i) => !usedQ.has(i)); usedQ.add(k); return queue[k]; };
   let qi = 0;
   for (const h of list) {

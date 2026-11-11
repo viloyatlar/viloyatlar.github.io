@@ -20,6 +20,8 @@ export const SPECIAL = [
   { id: "burj", name: "Burj Xalifa", price: "", items: [], plot: 2.0 },
   { id: "tajmahal", name: "Toj Mahal", price: "", items: [], plot: 2.7 },
   { id: "pisa", name: "Piza minorasi", price: "", items: [], plot: 1.6 },
+  { id: "piramida", name: "Piramida", price: "", items: [], plot: 2.7 },
+  { id: "eyfel", name: "Eyfel minorasi", price: "", items: [], plot: 2.2 },
 ];
 export const tierOf = (id) => TIERS.find((t) => t.id === id) || SPECIAL.find((t) => t.id === id) || TIERS[0];
 
@@ -212,6 +214,23 @@ export function makeTier(tier = "oddiy", o = {}) {
     const w = M("#F4EFE4", 0.45), t = new THREE.Group(); t.rotation.z = 0.09; t.position.y = 0.08; g.add(t);
     for (let i = 0; i < 7; i++) { mesh(t, new THREE.CylinderGeometry(0.34, 0.34, 0.34, 20), w, 0, 0.17 + i * 0.34, 0); mesh(t, new THREE.CylinderGeometry(0.4, 0.4, 0.04, 20), w, 0, 0.34 + i * 0.34, 0); }
     mesh(t, new THREE.CylinderGeometry(0.22, 0.26, 0.3, 16), w, 0, 2.53, 0);
+  } else if (tier === "piramida") { // one great pyramid, or three (o.kind2 === "3") like Giza
+    g.add(plotBase(2.7, 2.7, "#E8D3A2"));
+    const sand = M("#D9B26A", 0.85), cap = M("#F5C542", 0.25);
+    const pyr = (s, x, z) => { const p = mesh(g, new THREE.ConeGeometry(s * 0.72, s, 4), sand, x, 0.08 + s / 2, z); p.rotation.y = Math.PI / 4; const c = mesh(g, new THREE.ConeGeometry(s * 0.1, s * 0.14, 4), cap, x, 0.08 + s * 0.93, z); c.rotation.y = Math.PI / 4; };
+    if (o.kind2 === "3") { pyr(1.5, -0.35, -0.35); pyr(1.05, 0.75, 0.25); pyr(0.7, -0.75, 0.8); } else pyr(1.9, 0, 0);
+    for (const [x, z] of [[1.05, -0.95], [-1.1, 1.05]]) { const t = makeTree(0.7, "#4F9A3A"); t.position.set(x, 0.08, z); g.add(t); }
+  } else if (tier === "eyfel") { // Eiffel tower: four splayed legs, two decks, spire
+    g.add(plotBase(2.2, 2.2, "#9BD07A"));
+    const iron = M("#6E5A46", 0.55);
+    const leg = (sx, sz) => { const l = mesh(g, new THREE.BoxGeometry(0.1, 1.5, 0.1), iron, sx * 0.55, 0.8, sz * 0.55); l.rotation.z = sx * 0.36; l.rotation.x = -sz * 0.36; };
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) leg(sx, sz);
+    mesh(g, box(0.95, 0.07, 0.95, 0.02), iron, 0, 1.4, 0);
+    const mid = mesh(g, new THREE.CylinderGeometry(0.16, 0.36, 1.2, 4), iron, 0, 2.0, 0); mid.rotation.y = Math.PI / 4;
+    mesh(g, box(0.5, 0.06, 0.5, 0.02), iron, 0, 2.6, 0);
+    const top = mesh(g, new THREE.CylinderGeometry(0.03, 0.15, 1.1, 4), iron, 0, 3.15, 0); top.rotation.y = Math.PI / 4;
+    mesh(g, new THREE.CylinderGeometry(0.01, 0.02, 0.35, 6), M("#D1D5DB", 0.3), 0, 3.85, 0);
+    for (let i = 0; i < 4; i++) { const a = mesh(g, new THREE.TorusGeometry(0.42, 0.03, 6, 16, Math.PI), iron, 0, 0.12, 0); a.rotation.y = (i * Math.PI) / 2; a.position.set(Math.sin((i * Math.PI) / 2) * 0.62, 0.42, Math.cos((i * Math.PI) / 2) * 0.62); }
   } else if (tier === "hovli" && o.flags) {
     const h = makeTier("hovli", { ...o, flags: false }); g.add(h);
     const flag = (cols, x) => { mesh(g, new THREE.CylinderGeometry(0.02, 0.02, 1.4, 8), M("#D1D5DB", 0.3), x, 0.78, 1.0); cols.forEach((c, i) => mesh(g, new THREE.BoxGeometry(0.5, 0.1, 0.01), M(c, 0.6), x + 0.26, 1.38 - i * 0.1, 1.0)); };

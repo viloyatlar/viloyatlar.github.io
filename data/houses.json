@@ -2,7 +2,7 @@
   "_izoh": "Har qismdan keyin yangi obunachilarni qo'shing. kind: house | palace. at (ixtiyoriy) = [x, z]: x=(lon-64.495)*7.493, z=-(lat-41.40)*10. at bo'lmasa uy viloyat ichida avtomatik joylashadi.",
   "updated": "2026-11-11",
   "instagram": "negachi.uz",
-  "post": "https://www.instagram.com/reel/DfjzZ6CsLI7/",
+  "post": "https://www.instagram.com/reel/DfkgWRts7Ce/",
   "_post_izoh": "post = izoh yoziladigan eng oxirgi reels havolasi (har yangi qismdan keyin yangilang)",
   "houses": [
     {
@@ -160,7 +160,9 @@
       "kind": "house",
       "tier": "villa",
       "qism": 4,
-      "note": "3 qavatli hashamatli uy"
+      "note": "3 qavatli uy + Malibu 2",
+      "gift": "car",
+      "carColor": "#9CA3AF"
     },
     {
       "nick": "mardonbozorov_cr7",
@@ -194,9 +196,9 @@
       "region": "NAM",
       "place": "Namangan",
       "kind": "house",
-      "tier": "hovli",
+      "tier": "masjid",
       "qism": 4,
-      "note": "Katta hovli"
+      "note": "Masjid"
     },
     {
       "nick": "ibrohim.murodov_",
@@ -348,6 +350,86 @@
       "kind": "house",
       "tier": "oddiy",
       "qism": 4
+    },
+    {
+      "nick": "n1ght_001",
+      "region": "FAR",
+      "place": "Farg‘ona",
+      "kind": "house",
+      "tier": "piramida",
+      "qism": 5,
+      "note": "Piramida"
+    },
+    {
+      "nick": "abdurashidov7326",
+      "region": "FAR",
+      "place": "Farg‘ona",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 5
+    },
+    {
+      "nick": "mirboboeva_salomat",
+      "region": "SAM",
+      "place": "Samarqand",
+      "kind": "house",
+      "tier": "tajmahal",
+      "qism": 5,
+      "note": "Toj Mahal + Bugatti",
+      "gift": "car",
+      "carColor": "#1E3A8A"
+    },
+    {
+      "nick": "gentra_xx7",
+      "region": "NAM",
+      "place": "Namangan",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 5,
+      "note": "Uy + BMW",
+      "gift": "car",
+      "carColor": "#111827"
+    },
+    {
+      "nick": "imron.v7",
+      "region": "NAV",
+      "place": "Navoiy",
+      "kind": "house",
+      "tier": "qasr",
+      "qism": 5,
+      "note": "Qasr + Rolls-Royce",
+      "gift": "car",
+      "carColor": "#F5F5F5"
+    },
+    {
+      "nick": "yusupoovv___17_",
+      "region": "XOR",
+      "place": "Xorazm",
+      "kind": "house",
+      "tier": "villa",
+      "qism": 5,
+      "note": "Katta villa + 2 mashina",
+      "gift": "car",
+      "carColor": "#2F6FD6"
+    },
+    {
+      "nick": "tttm1.7",
+      "region": "SIR",
+      "place": "Sirdaryo",
+      "kind": "house",
+      "tier": "piramida",
+      "qism": 5,
+      "kind2": "3",
+      "note": "3 ta piramida"
+    },
+    {
+      "nick": "ozodbek_sobirov2315",
+      "region": "SIR",
+      "place": "Sirdaryo",
+      "kind": "house",
+      "tier": "eyfel",
+      "qism": 5,
+      "note": "Eyfel minorasi"
     }
   ]
 }
