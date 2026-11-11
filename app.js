@@ -27,11 +27,36 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05; renderer.outputColorSpace = THREE.SRGBColorSpace;
 const scene = new THREE.Scene(); scene.background = new THREE.Color("#CFE2EE"); scene.fog = new THREE.Fog("#CFE2EE", 380, 900);
-scene.add(new THREE.HemisphereLight("#EAF4FF", "#7A6A55", 0.95));
+const hemi = new THREE.HemisphereLight("#EAF4FF", "#7A6A55", 0.95); scene.add(hemi);
 const sun = new THREE.DirectionalLight("#FFF1DC", 2.5); sun.castShadow = true; sun.shadow.mapSize.set(4096, 4096); sun.shadow.radius = 3; sun.shadow.bias = -0.0004;
 scene.add(sun, sun.target);
 const setSun = (cx, cz, half) => { sun.position.set(cx - 30, 60, cz + 30); sun.target.position.set(cx, 0, cz); Object.assign(sun.shadow.camera, { left: -half, right: half, top: half, bottom: -half, near: 1, far: 240 }); sun.shadow.camera.updateProjectionMatrix(); };
 const ground = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.MeshStandardMaterial({ color: "#E6DCC9", roughness: 0.95 }));
+
+// ---------------------------------------------------------------- night mode: dark sky + stars, moonlight, glowing windows, lamps and headlights
+let night = false;
+const stars = (() => { const n = 1400, p = new Float32Array(n * 3); let sd = 11; const r = () => ((sd = (sd * 1664525 + 1013904223) >>> 0) / 4294967296);
+  for (let i = 0; i < n; i++) { const th = r() * Math.PI * 2, ph = r() * Math.PI * 0.42, R = 1500; p[i * 3] = Math.cos(th) * Math.sin(ph) * R; p[i * 3 + 1] = Math.cos(ph) * R * 0.6 + 120; p[i * 3 + 2] = Math.sin(th) * Math.sin(ph) * R; }
+  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(p, 3));
+  const m = new THREE.Points(g, new THREE.PointsMaterial({ color: "#FFFFFF", size: 2.2, sizeAttenuation: false, transparent: true, opacity: 0.85, fog: false })); m.visible = false; scene.add(m); return m; })();
+const WINDOW = new Set(["2b3b4e", "1f2a36"]), LAMP = new Set(["fff3c4", "fff6c8"]);
+function applyNight(root = scene) {
+  root.traverse((o) => { if (o.userData && o.userData.nightOnly) o.visible = night; const m = o.material; if (!m || !m.color || !m.isMeshStandardMaterial) return;
+    const hex = m.color.getHexString();
+    if (WINDOW.has(hex)) { m.emissive.set(night ? "#FFC56B" : "#000000"); m.emissiveIntensity = night ? 1.15 : 0; }
+    else if (LAMP.has(hex)) { m.emissive.set("#FFD978"); m.emissiveIntensity = night ? 3.2 : 0.9; }
+    else if (hex === "4cb8e8" || hex === "3fb6e8") { m.emissiveIntensity = night ? 0.9 : 0.3; } });
+}
+function setNight(on) {
+  night = on;
+  scene.background.set(on ? "#0B1430" : "#CFE2EE"); scene.fog.color.set(on ? "#0B1430" : "#CFE2EE");
+  ground.material.color.set(on ? "#3A3F4E" : "#E6DCC9");
+  hemi.color.set(on ? "#5B6FA8" : "#EAF4FF"); hemi.groundColor.set(on ? "#1A1A2A" : "#7A6A55"); hemi.intensity = on ? 0.55 : 0.95;
+  sun.color.set(on ? "#9DB4FF" : "#FFF1DC"); sun.intensity = on ? 0.75 : 2.5;
+  renderer.toneMappingExposure = on ? 1.25 : 1.05; stars.visible = on;
+  applyNight(); document.body.classList.toggle("night", on);
+  try { localStorage.setItem("vb_night", on ? "1" : "0"); } catch {}
+}
 ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
 
 const camera = new THREE.PerspectiveCamera(36, 1, 0.5, 3000);
@@ -174,7 +199,7 @@ function buildCity(id) {
     const slab = new THREE.Mesh(new RoundedBoxGeometry(BW, 0.16, BD, 2, 0.06), walk); slab.position.set(cx, TOP + 0.08, cz); slab.receiveShadow = true; g.add(slab);
     for (const [dx, dz] of [[-BW / 2 + 0.25, -BD / 2 + 0.25], [BW / 2 - 0.25, BD / 2 - 0.25]]) {
       const lp = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.3, 6), M("#3A3F48", 0.5)); lp.position.set(cx + dx, TOP + 0.8, cz + dz); g.add(lp);
-      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), new THREE.MeshStandardMaterial({ color: "#FFF3C4", emissive: "#FFD978", emissiveIntensity: 0.9 })); bulb.position.set(cx + dx, TOP + 1.48, cz + dz); g.add(bulb);
+      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), new THREE.MeshStandardMaterial({ color: "#FFF3C4", emissive: "#FFD978", emissiveIntensity: 0.9 })); bulb.position.set(cx + dx, TOP + 1.48, cz + dz); g.add(bulb); const pool = new THREE.Mesh(new THREE.CircleGeometry(1.6, 24), new THREE.MeshBasicMaterial({ color: "#FF9A2E", transparent: true, opacity: 0.26, depthWrite: false, blending: THREE.AdditiveBlending })); pool.rotation.x = -Math.PI / 2; pool.position.set(cx + dx, TOP + 0.2, cz + dz); pool.userData.nightOnly = true; pool.visible = night; g.add(pool);
     }
   });
   // homes: palaces take a whole block, everyone else one plot
@@ -182,7 +207,7 @@ function buildCity(id) {
   for (const h of list) if (h.kind === "palace") {
     const [cx, cz] = used[bi++]; const p = makePalace(); p.scale.setScalar(1.45); p.position.set(cx, TOP + 0.16, cz); p.userData.nick = h.nick; g.add(p);
     if (h.gift === "car") { const car = shadowAll(makeCar(h.carColor || "#E3262F", true)); car.scale.setScalar(2.2); car.position.set(cx + 4.6, TOP + 0.16, cz + 3.4); car.rotation.y = -0.4; g.add(car); }
-    if (h.sign) { const cv = document.createElement("canvas"); cv.width = 512; cv.height = 96; const x = cv.getContext("2d"); x.fillStyle = "#14213D"; x.fillRect(0, 0, 512, 96); x.strokeStyle = "#F5C542"; x.lineWidth = 8; x.strokeRect(4, 4, 504, 88); x.fillStyle = "#F5C542"; x.font = "900 60px Inter, Arial"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(h.sign, 256, 52); const tx = new THREE.CanvasTexture(cv); tx.colorSpace = THREE.SRGBColorSpace; const pl = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 0.64), new THREE.MeshStandardMaterial({ map: tx, roughness: 0.5 })); pl.position.set(cx, TOP + 0.16 + 3.75 * 1.45 * 0.8, cz + 2.2); g.add(pl); }
+    if (h.sign) { const cv = document.createElement("canvas"); cv.width = 512; cv.height = 96; const x = cv.getContext("2d"); x.fillStyle = "#14213D"; x.fillRect(0, 0, 512, 96); x.strokeStyle = "#F5C542"; x.lineWidth = 8; x.strokeRect(4, 4, 504, 88); x.fillStyle = "#F5C542"; x.font = "900 60px Inter, Arial"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(h.sign, 256, 52); const tx = new THREE.CanvasTexture(cv); tx.colorSpace = THREE.SRGBColorSpace; const pl = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 0.64), new THREE.MeshStandardMaterial({ map: tx, roughness: 0.5, emissive: "#FFFFFF", emissiveMap: tx, emissiveIntensity: 0.7 })); pl.position.set(cx, TOP + 0.16 + 3.75 * 1.45 * 0.8, cz + 2.2); g.add(pl); }
     spots[h.nick.toLowerCase()] = { h, pos: new THREE.Vector3(cx, TOP, cz), height: 6.6 };
   }
   used.forEach(([cx, cz], i) => { if (i < bi || role[i] === "park") return; for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) queue.push([cx + (c - 1) * LOT, cz + (r - 0.5) * LOT, role[i]]); });
@@ -303,7 +328,7 @@ const setLimits = (b) => { LIMIT = b; controls.maxDistance = Math.max(b.x1 - b.x
 const crumb = document.getElementById("crumb");
 function enterCity(id, then) {
   if (city && city.id === id) { then && then(); return; }
-  const c = buildCity(id);
+  const c = buildCity(id); applyNight(c.g);
   if (city) city.g.visible = false;
   city = c; country.visible = false; c.g.visible = true;
   for (const el of Object.values(nickTags)) el.remove(); for (const k in nickTags) delete nickTags[k];
@@ -397,6 +422,8 @@ canvas.addEventListener("pointerup", (e) => {
   for (const hit of ray.intersectObjects(city.g.children, true)) { let o = hit.object; while (o && !o.userData.nick && o.parent) o = o.parent; if (o && o.userData.nick) { focusNick(o.userData.nick.toLowerCase()); return; } }
 });
 document.getElementById("home").onclick = () => exitCity();
+document.getElementById("nightBtn").onclick = () => setNight(!night);
+{ let pref = null; try { pref = localStorage.getItem("vb_night"); } catch {} const qn = new URLSearchParams(location.search).get("night"); if (qn === "1" || (qn === null && pref === "1")) setNight(true); }
 crumb.querySelector("button").onclick = () => exitCity();
 
 // ---------------------------------------------------------------- loop
@@ -429,6 +456,7 @@ if (new URLSearchParams(location.search).has("rec")) {
     country() { if (city) exitCity(); fly = null; scene.fog.near = 380; scene.fog.far = 900; return { anchors: Object.fromEntries(Object.entries(R).map(([k, r]) => [k, [r.anchor.x, r.anchor.z]])) }; },
     city(id) { enterCity(id); fly = null; const c = city; return { focus: c.focus, free: c.free.slice(0, 12), spots: Object.fromEntries(Object.entries(c.spots).map(([k, s]) => [k, [s.pos.x, s.pos.y, s.pos.z, s.height]])) }; },
     villa(id, x, z, at) { const c = buildCity(id); if (villa) villa.parent.remove(villa); villa = shadowAll(makeTier("villa")); villa.scale.setScalar(1.05); villa.position.set(x, TOP + 0.16, z); c.g.add(villa); villaAt = at; },
+    night(on) { setNight(!!on); },
     noVilla() { if (villa) villa.parent.remove(villa); villa = null; },
     frame(t, c, pts = []) {
       cam(c); if (city && city.anim) city.anim(t);

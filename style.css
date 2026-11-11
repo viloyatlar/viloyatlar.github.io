@@ -134,3 +134,15 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); c
 @media (min-width: 900px) { .crumb { top: 72px; left: 50%; transform: translateX(-50%); } }
 .nick.me { background: var(--green) !important; color: #fff !important; font-size: 14px; padding: 5px 12px; z-index: 3; }
 body.rec .top, body.rec .search, body.rec .sheet, body.rec .fabs, body.rec .crumb, body.rec #labels, body.rec .loading { display: none !important; } body.rec #c { position: static; }
+
+/* night mode */
+#nightBtn { font-size: 22px; }
+#nightBtn .sunic { display: none; }
+body.night #nightBtn .moon { display: none; }
+body.night #nightBtn .sunic { display: inline; }
+body.night { background: #0B1430; }
+body.night .brand, body.night .stat, body.night .search, body.night .fab, body.night .crumb { background: rgba(22,30,58,.94); color: #E5E7EB; }
+body.night .search input { color: #F3F4F6; }
+body.night .stat span { color: #4ADE80; }
+body.night .tag { background: rgba(22,30,58,.94); color: #F3F4F6; }
+body.night .nick:not(.me) { background: rgba(22,30,58,.94); color: #86EFAC; }
