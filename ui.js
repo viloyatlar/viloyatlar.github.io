@@ -1,6 +1,6 @@
 // "Uy olish" (follow -> comment -> house) and "Uyingizni bezang" (tier preview) windows.
 import * as THREE from "three";
-import { TIERS, tierOf, makeTier, ROOFS, WALLS } from "./tiers.js?v=20261111b";
+import { TIERS, tierOf, makeTier, ROOFS, WALLS } from "./tiers.js?v=20261112a";
 
 let NAMES, IG, INSTAGRAM, POST;
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
