@@ -5,8 +5,8 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { tierOf, makeTier, makeTree, makeHouse, makeCar } from "./tiers.js?v=20261112a";
-import { initUI, openGet, openShop, shopFrame } from "./ui.js?v=20261112a";
+import { tierOf, makeTier, makeTree, makeHouse, makeCar } from "./tiers.js?v=20261112b";
+import { initUI, openGet, openShop, shopFrame } from "./ui.js?v=20261112b";
 
 const NAMES = { QQR: "Qoraqalpog‘iston", NAV: "Navoiy", BUX: "Buxoro", XOR: "Xorazm", SAM: "Samarqand", JIZ: "Jizzax", SIR: "Sirdaryo", TOV: "Toshkent viloyati", TSH: "Toshkent shahri", NAM: "Namangan", AND: "Andijon", FAR: "Farg‘ona", QAS: "Qashqadaryo", SUR: "Surxondaryo" };
 const COL = { QQR: "#E3C78F", NAV: "#EFB27A", BUX: "#E59A6E", XOR: "#7FC37A", SAM: "#6DB4D8", JIZ: "#C7D46E", SIR: "#9AD07C", TOV: "#63B07A", TSH: "#F2C14E", NAM: "#86C9A8", AND: "#7DC860", FAR: "#B9A6E0", QAS: "#E8B24F", SUR: "#D98C8C" };
@@ -165,12 +165,20 @@ function makePark(g, cx, cz) {
   }
   return jet;
 }
+// per-nick colour so look-alike requests (castles, towers, plain houses...) still differ
+const BLOCK = new Set(["aeroport", "stadion"]);
+const HUE = { roof: ["#C0452E", "#2F6FD6", "#2E9E5B", "#7C3AED", "#E08A1E", "#D63384", "#0EA5A4", "#8B5E34"], wall: ["#F4EEE4", "#FFE9C7", "#E3F1FF", "#F9E1EA", "#E7F6E1", "#EDE7FF", "#FFF4D6", "#E6F4F1"],
+  stone: ["#BDB5A6", "#D8C7A6", "#A9B4C2", "#C9A99A", "#B7C4A5"], dome: ["#2BB3B1", "#2F6FD6", "#16A34A", "#F5C542", "#7C3AED"] };
+const hashN = (s) => { let x = 2166136261; for (const ch of s) x = Math.imul(x ^ ch.charCodeAt(0), 16777619) >>> 0; return x; };
+const look = (h) => { const k = hashN(h.nick); const pick = (arr, sh) => arr[(k >>> sh) % arr.length];
+  return { roof: h.roof || (h.tier === "villa" ? undefined : pick(HUE.roof, 0)), wall: h.wall || pick(HUE.wall, 5), stone: pick(HUE.stone, 10), dome: pick(HUE.dome, 15) }; };
 function buildCity(id) {
   if (cities[id]) return cities[id];
   const reg = R[id], g = new THREE.Group(), spots = {}, list = reg.houses.slice();
   const order = { villa: 3, hovli: 2, rangli: 1, oddiy: 0 };
   list.sort((a, b) => (b.kind === "palace") - (a.kind === "palace") || (order[b.tier] || 0) - (order[a.tier] || 0) || (a.qism || 0) - (b.qism || 0));
-  const palaces = list.filter((h) => h.kind === "palace").length, plots = list.length - palaces;
+  list.sort((a, b) => (b.kind === "palace") - (a.kind === "palace") || BLOCK.has(b.tier) - BLOCK.has(a.tier));
+  const palaces = list.filter((h) => h.kind === "palace" || BLOCK.has(h.tier)).length, plots = list.length - palaces;
   const resBlocks = Math.max(1, Math.ceil(plots / 6) + palaces);
   const total = Math.max(14, Math.round(resBlocks * 1.8) + 8); // residential + parks + spare blocks
   const A0 = area(reg.ring), span0 = Math.max(reg.size.x, reg.size.z);
@@ -210,15 +218,22 @@ function buildCity(id) {
     if (h.sign) { const cv = document.createElement("canvas"); cv.width = 512; cv.height = 96; const x = cv.getContext("2d"); x.fillStyle = "#14213D"; x.fillRect(0, 0, 512, 96); x.strokeStyle = "#F5C542"; x.lineWidth = 8; x.strokeRect(4, 4, 504, 88); x.fillStyle = "#F5C542"; x.font = "900 60px Inter, Arial"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(h.sign, 256, 52); const tx = new THREE.CanvasTexture(cv); tx.colorSpace = THREE.SRGBColorSpace; const pl = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 0.64), new THREE.MeshStandardMaterial({ map: tx, roughness: 0.5, emissive: "#FFFFFF", emissiveMap: tx, emissiveIntensity: 0.7 })); pl.position.set(cx, TOP + 0.16 + 3.75 * 1.45 * 0.8, cz + 2.2); g.add(pl); }
     spots[h.nick.toLowerCase()] = { h, pos: new THREE.Vector3(cx, TOP, cz), height: 6.6 };
   }
+  // airports and stadiums are as big as a whole block
+  for (const h of list) if (h.kind !== "palace" && BLOCK.has(h.tier)) {
+    const [cx, cz] = used[bi++]; const o = shadowAll(makeTier(h.tier, { ...look(h), kind2: h.kind2 }));
+    const b0 = new THREE.Box3().setFromObject(o), sz = b0.getSize(new THREE.Vector3()); const s = Math.min((BW - 0.6) / sz.x, (BD - 0.6) / sz.z);
+    o.scale.setScalar(s); o.position.set(cx, TOP + 0.16, cz); o.userData.nick = h.nick; g.add(o);
+    const hb = new THREE.Box3().setFromObject(o); spots[h.nick.toLowerCase()] = { h, pos: new THREE.Vector3(cx, TOP + 0.16, cz), height: Math.max(1.2, hb.max.y - TOP - 0.16) };
+  }
   used.forEach(([cx, cz], i) => { if (i < bi || role[i] === "park") return; for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) queue.push([cx + (c - 1) * LOT, cz + (r - 0.5) * LOT, role[i]]); });
   // tall buildings take the back row of a block, low ones the front row, so nothing hides behind a tower
-  const TALL = new Set(["minora", "burj", "pisa", "tajmahal", "masjid", "qasr", "uy2", "eyfel", "piramida", "teleminora", "egiz"]), usedQ = new Set();
+  const TALL = new Set(["villa3", "minora", "burj", "pisa", "tajmahal", "masjid", "qasr", "uy2", "eyfel", "piramida", "teleminora", "egiz"]), usedQ = new Set();
   const lotFor = (h) => { const back = TALL.has(h.tier); let k = queue.findIndex((q, i) => !usedQ.has(i) && (((i % 6) < 3) === back)); if (k < 0) k = queue.findIndex((q, i) => !usedQ.has(i)); usedQ.add(k); return queue[k]; };
   let qi = 0;
   for (const h of list) {
-    if (h.kind === "palace") continue;
+    if (h.kind === "palace" || BLOCK.has(h.tier)) continue;
     qi++; const [x, z] = lotFor(h); const t = tierOf(h.tier); const s = Math.min(2.0, (LOT - 0.5) / t.plot);
-    const o = shadowAll(makeTier(h.tier || "oddiy", { roof: h.roof, wall: h.wall, car: h.car, floors: h.floors, kind2: h.kind2, flags: h.flags })); o.scale.setScalar(s); o.position.set(x, TOP + 0.16, z); o.rotation.y = 0; o.userData.nick = h.nick; g.add(o);
+    const o = shadowAll(makeTier(h.tier || "oddiy", { ...look(h), car: h.car || h.carColor, floors: h.floors, kind2: h.kind2, flags: h.flags })); o.scale.setScalar(s); o.position.set(x, TOP + 0.16, z); o.rotation.y = 0; o.userData.nick = h.nick; g.add(o);
     if (h.gift === "car") { const car = shadowAll(makeCar(h.carColor || "#E3262F", true)); car.scale.setScalar(1.5); car.position.set(x + LOT * 0.32, TOP + 0.2, z + LOT * 0.36); car.rotation.y = 0.15; g.add(car); }
     const hb = new THREE.Box3().setFromObject(o);
     const lawn = new THREE.Mesh(new THREE.BoxGeometry(LOT - 0.3, 0.04, LOT - 0.3), grass); lawn.position.set(x, TOP + 0.17, z); lawn.receiveShadow = true; g.add(lawn);

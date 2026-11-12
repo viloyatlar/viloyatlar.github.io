@@ -26,6 +26,8 @@ export const SPECIAL = [
   { id: "egiz", name: "Egiz minoralar", price: "", items: [], plot: 2.2 },
   { id: "stadion", name: "Stadion", price: "", items: [], plot: 3.4 },
   { id: "devor", name: "Buyuk Xitoy devori", price: "", items: [], plot: 3.6 },
+  { id: "aeroport", name: "Aeroport", price: "", items: [], plot: 3.6 },
+  { id: "villa3", name: "3 qavatli villa", price: "", items: [], plot: 3.6 },
 ];
 export const tierOf = (id) => TIERS.find((t) => t.id === id) || SPECIAL.find((t) => t.id === id) || TIERS[0];
 
@@ -85,6 +87,31 @@ function lamp(h = 0.6) {
   const g = new THREE.Group();
   mesh(g, new THREE.CylinderGeometry(0.02, 0.025, h, 8), M("#2A2E35", 0.5, { metalness: 0.5 }), 0, h / 2, 0);
   mesh(g, new THREE.SphereGeometry(0.06, 12, 8), M("#FFF3C4", 0.3, { emissive: "#FFD978", emissiveIntensity: 1.4 }), 0, h + 0.03, 0);
+  return g;
+}
+
+export function makePlane(stripe = "#2F6FD6") { // airliner, nose to +x
+  const g = new THREE.Group(), white = M("#F7F8FA", 0.35, { metalness: 0.2 }), st = M(stripe, 0.4);
+  const f = mesh(g, new THREE.CylinderGeometry(0.085, 0.075, 1.05, 16), white, 0, 0.32, 0); f.rotation.z = Math.PI / 2;
+  mesh(g, new THREE.SphereGeometry(0.085, 14, 10), white, 0.52, 0.32, 0).scale.set(1.4, 1, 1);
+  const tl = mesh(g, new THREE.ConeGeometry(0.075, 0.25, 14), white, -0.64, 0.34, 0); tl.rotation.z = Math.PI / 2;
+  mesh(g, new THREE.BoxGeometry(0.26, 0.02, 1.15), white, 0.02, 0.29, 0);
+  mesh(g, new THREE.BoxGeometry(0.12, 0.015, 0.42), white, -0.62, 0.36, 0);
+  mesh(g, new THREE.BoxGeometry(0.16, 0.24, 0.02), st, -0.64, 0.48, 0);
+  mesh(g, new THREE.BoxGeometry(1.0, 0.025, 0.172), st, 0, 0.3, 0);
+  for (const z of [-0.26, 0.26]) { const e = mesh(g, new THREE.CylinderGeometry(0.04, 0.04, 0.16, 12), M("#9CA3AF", 0.4, { metalness: 0.5 }), 0.08, 0.24, z); e.rotation.z = Math.PI / 2; }
+  for (const [x, z] of [[0.38, 0], [-0.05, -0.12], [-0.05, 0.12]]) mesh(g, new THREE.CylinderGeometry(0.02, 0.02, 0.2, 6), M("#2A2E35", 0.6), x, 0.12, z);
+  return g;
+}
+function makeHeli(color = "#E3262F") {
+  const g = new THREE.Group(), body = M(color, 0.35, { metalness: 0.3 }), dark = M("#1F2933", 0.4, { metalness: 0.4 });
+  mesh(g, new THREE.SphereGeometry(0.2, 16, 12), body, 0, 0.27, 0).scale.set(1.45, 0.9, 0.9);
+  mesh(g, new THREE.SphereGeometry(0.15, 14, 10), M("#2B3B4E", 0.15), 0.13, 0.3, 0).scale.set(1, 0.8, 0.95);
+  const tb = mesh(g, new THREE.CylinderGeometry(0.035, 0.05, 0.55, 8), body, -0.45, 0.31, 0); tb.rotation.z = Math.PI / 2;
+  mesh(g, new THREE.BoxGeometry(0.06, 0.18, 0.02), body, -0.72, 0.38, 0);
+  mesh(g, new THREE.CylinderGeometry(0.02, 0.02, 0.1, 6), dark, 0, 0.47, 0);
+  for (const r of [0.3, -0.3 + Math.PI / 2]) { const b = mesh(g, new THREE.BoxGeometry(1.1, 0.012, 0.05), dark, 0, 0.52, 0); b.rotation.y = r; }
+  for (const z of [-0.14, 0.14]) { mesh(g, new THREE.BoxGeometry(0.5, 0.02, 0.025), dark, 0, 0.04, z); for (const x of [-0.12, 0.12]) mesh(g, new THREE.BoxGeometry(0.02, 0.12, 0.02), dark, x, 0.1, z); }
   return g;
 }
 
@@ -172,7 +199,7 @@ export function makeTier(tier = "oddiy", o = {}) {
     if (o.kind2 === "mashina") for (let i = 0; i < 3; i++) { const c = makeCar(["#E3262F", "#2F6FD6", "#F5F5F5"][i]); c.scale.setScalar(0.55); c.position.set(-0.9 + i * 0.6, 0.08, 0.72); g.add(c); }
   } else if (tier === "masjid") { // mosque: cube, turquoise dome on a drum, two minarets
     g.add(plotBase(2.4, 2.4, "#C9D9B8"));
-    const sand = M("#E9DCC0", 0.75), tq = M("#2BB3B1", 0.35), gold = M("#F5C542", 0.25);
+    const sand = M(o.wall || "#E9DCC0", 0.75), tq = M(o.dome || "#2BB3B1", 0.35), gold = M("#F5C542", 0.25);
     mesh(g, box(1.4, 0.8, 1.3, 0.03), sand, 0, 0.48, -0.1);
     mesh(g, new THREE.CylinderGeometry(0.5, 0.52, 0.3, 24), sand, 0, 1.03, -0.1);
     const d = mesh(g, new THREE.SphereGeometry(0.52, 28, 16, 0, Math.PI * 2, 0, Math.PI / 2), tq, 0, 1.18, -0.1); d.scale.set(1, 1.25, 1);
@@ -182,7 +209,7 @@ export function makeTier(tier = "oddiy", o = {}) {
     const ar = mesh(g, new THREE.CylinderGeometry(0.2, 0.2, 0.04, 16, 1, false, 0, Math.PI), M("#2B6E8F", 0.4), 0, 0.63, 0.56); ar.rotation.x = Math.PI / 2; ar.rotation.y = Math.PI / 2;
   } else if (tier === "muzey") { // museum with blue tile frieze and colonnade
     g.add(plotBase(2.5, 2.1, "#A8D48E"));
-    const st = M("#F0E6D2", 0.6), tile = M("#2C6FD1", 0.4);
+    const st = M(o.wall || "#F0E6D2", 0.6), tile = M(o.roof || "#2C6FD1", 0.4);
     mesh(g, box(2.1, 0.9, 1.1, 0.03), st, 0, 0.53, -0.3);
     mesh(g, box(2.2, 0.16, 1.2, 0.02), tile, 0, 1.05, -0.3);
     for (let i = 0; i < 6; i++) mesh(g, new THREE.CylinderGeometry(0.06, 0.07, 0.86, 12), st, -0.75 + i * 0.3, 0.52, 0.32);
@@ -191,7 +218,7 @@ export function makeTier(tier = "oddiy", o = {}) {
     mesh(g, new THREE.BoxGeometry(0.8, 0.16, 0.02), M("#F5C542", 0.4), 0, 0.88, 0.49);
   } else if (tier === "qasr") { // castle: walls, four towers with cones, central keep
     g.add(plotBase(2.6, 2.4, "#9CC27E"));
-    const ark = o.kind2 === "ark", stone = M(ark ? "#D8B98A" : "#BDB5A6", 0.85), roofM = M(ark ? "#D8B98A" : "#7C3AED", 0.5);
+    const ark = o.kind2 === "ark", stone = M(ark ? "#D8B98A" : o.stone || "#BDB5A6", 0.85), roofM = M(ark ? "#D8B98A" : o.roof || "#7C3AED", 0.5);
     for (const [x, z, w, d] of [[0, -0.95, 2.0, 0.18], [0, 0.95, 2.0, 0.18], [-0.95, 0, 0.18, 2.0], [0.95, 0, 0.18, 2.0]]) mesh(g, box(w, 0.6, d, 0.02), stone, x, 0.38, z);
     for (const [x, z] of [[-0.95, -0.95], [0.95, -0.95], [-0.95, 0.95], [0.95, 0.95]]) { mesh(g, new THREE.CylinderGeometry(0.26, 0.28, 1.0, 16), stone, x, 0.58, z); mesh(g, new THREE.ConeGeometry(0.32, 0.5, 16), roofM, x, 1.33, z); }
     mesh(g, box(0.8, 1.4, 0.8, 0.03), stone, 0, 0.78, -0.1); mesh(g, new THREE.ConeGeometry(0.6, 0.7, 4), roofM, 0, 1.83, -0.1).rotation.y = Math.PI / 4;
@@ -261,6 +288,42 @@ export function makeTier(tier = "oddiy", o = {}) {
     const st = M("#B9A888", 0.9), top = M("#9E8E70", 0.9);
     for (let i = 0; i < 4; i++) { const x = -1.35 + i * 0.9; mesh(g, box(0.9, 0.55 + (i % 2) * 0.12, 0.38, 0.02), st, x, 0.36 + (i % 2) * 0.06, (i % 2 ? 0.1 : -0.1)); for (let k = 0; k < 4; k++) mesh(g, new THREE.BoxGeometry(0.1, 0.1, 0.4), top, x - 0.33 + k * 0.22, 0.7 + (i % 2) * 0.12, (i % 2 ? 0.1 : -0.1)); }
     for (const x of [-1.6, 0, 1.6]) { mesh(g, box(0.45, 0.95, 0.45, 0.02), st, x, 0.55, 0); mesh(g, new THREE.ConeGeometry(0.34, 0.3, 4), M("#7A3E2B", 0.6), x, 1.17, 0).rotation.y = Math.PI / 4; }
+  } else if (tier === "aeroport") { // airport: runway with markings, taxiway, glass terminal, control tower, airliners
+    g.add(plotBase(3.6, 2.6, "#9FCB86"));
+    const asph = M("#3A3F47", 0.85), paint = M("#F4F1E8", 0.6), glass = M("#7FB7E0", 0.12, { metalness: 0.3, emissive: "#2B6E8F", emissiveIntensity: 0.15 });
+    mesh(g, box(3.4, 0.03, 0.5, 0.01), asph, 0, 0.1, -0.8);
+    for (let i = 0; i < 9; i++) mesh(g, new THREE.BoxGeometry(0.18, 0.032, 0.03), paint, -1.45 + i * 0.36, 0.105, -0.8);
+    for (const s of [-1, 1]) for (let k = 0; k < 4; k++) mesh(g, new THREE.BoxGeometry(0.16, 0.032, 0.04), paint, s * 1.55, 0.105, -0.95 + k * 0.1);
+    mesh(g, box(0.25, 0.028, 0.75, 0.01), asph, 0.2, 0.1, -0.2); mesh(g, box(2.2, 0.028, 0.5, 0.01), asph, -0.3, 0.1, 0.2);
+    mesh(g, box(1.6, 0.42, 0.55, 0.03), glass, -0.5, 0.3, 0.75);
+    mesh(g, box(1.75, 0.07, 0.68, 0.02), M(o.roof || "#F7F8FA", 0.4), -0.5, 0.55, 0.75);
+    mesh(g, new THREE.BoxGeometry(0.9, 0.12, 0.02), M("#1F6FEB", 0.4), -0.5, 0.42, 1.03);
+    mesh(g, new THREE.CylinderGeometry(0.1, 0.14, 1.3, 12), M("#E5E7EB", 0.5), 1.25, 0.73, 0.8);
+    mesh(g, new THREE.CylinderGeometry(0.24, 0.18, 0.22, 12), glass, 1.25, 1.48, 0.8);
+    mesh(g, new THREE.CylinderGeometry(0.26, 0.26, 0.05, 12), M("#E5E7EB", 0.5), 1.25, 1.62, 0.8);
+    mesh(g, new THREE.CylinderGeometry(0.01, 0.01, 0.3, 6), M("#C0392B", 0.5), 1.25, 1.8, 0.8);
+    const p1 = makePlane(o.roof || "#2F6FD6"); p1.position.set(-0.4, 0.1, -0.8); g.add(p1);
+    const p2 = makePlane("#C0392B"); p2.scale.setScalar(0.85); p2.position.set(-0.6, 0.1, 0.22); p2.rotation.y = Math.PI; g.add(p2);
+    const p3 = makePlane("#16A34A"); p3.scale.setScalar(0.85); p3.position.set(0.55, 0.1, 0.22); p3.rotation.y = Math.PI; g.add(p3);
+  } else if (tier === "villa3") { // 3-storey modern villa: garage in front, helipad with a helicopter on the roof
+    g.add(plotBase(3.6, 3.4, "#7CC56A"));
+    const white = M(o.wall || "#F6F4EF", 0.45), dark = M("#1F2A36", 0.12, { metalness: 0.35 }), wood = M("#A0714A", 0.7);
+    const F = 0.62, W = 2.1, D = 1.5, X = 0.25, Z = -0.65;
+    for (let f = 0; f < 3; f++) { const w = W - f * 0.1, y = 0.08 + f * F; mesh(g, box(w, F - 0.06, D, 0.03), white, X, y + F / 2, Z); mesh(g, new THREE.BoxGeometry(w - 0.3, F - 0.26, 0.02), dark, X, y + F / 2, Z + D / 2 + 0.005); mesh(g, box(w + 0.12, 0.06, D + 0.12, 0.02), wood, X, y + F, Z); }
+    const top = 0.08 + 3 * F + 0.03;
+    mesh(g, new THREE.CylinderGeometry(0.62, 0.62, 0.04, 32), M("#2A2E35", 0.7), X, top, Z);
+    const ring = mesh(g, new THREE.TorusGeometry(0.55, 0.025, 6, 40), M("#F5C542", 0.4), X, top + 0.025, Z); ring.rotation.x = Math.PI / 2;
+    const hm = M("#FFFFFF", 0.5); for (const dx of [-0.16, 0.16]) mesh(g, new THREE.BoxGeometry(0.06, 0.02, 0.42), hm, X + dx, top + 0.03, Z); mesh(g, new THREE.BoxGeometry(0.32, 0.02, 0.06), hm, X, top + 0.03, Z);
+    const heli = makeHeli("#E3262F"); heli.scale.setScalar(0.85); heli.position.set(X - 0.05, top + 0.02, Z + 0.05); heli.rotation.y = 0.5; g.add(heli);
+    // garage in front of the house, open door with a car inside, driveway
+    mesh(g, box(1.15, 0.5, 0.8, 0.03), white, -0.95, 0.33, 0.55); mesh(g, box(1.25, 0.06, 0.9, 0.02), wood, -0.95, 0.6, 0.55);
+    mesh(g, new THREE.BoxGeometry(0.95, 0.36, 0.02), M("#9CA3AF", 0.4, { metalness: 0.5 }), -0.95, 0.27, 0.96);
+    for (let i = 0; i < 4; i++) mesh(g, new THREE.BoxGeometry(0.95, 0.012, 0.025), M("#6B7280", 0.5), -0.95, 0.14 + i * 0.08, 0.97);
+    mesh(g, box(1.0, 0.025, 0.7, 0.01), M("#C9C2B4", 0.85), -0.95, 0.09, 1.35);
+    const c = makeCar(o.car || "#111827", true); c.position.set(-0.95, 0.08, 1.35); c.rotation.y = Math.PI / 2; g.add(c);
+    mesh(g, box(1.0, 0.05, 0.7, 0.02), M("#D9C8AE", 0.8), 0.95, 0.11, 0.85); mesh(g, new THREE.BoxGeometry(0.8, 0.03, 0.5), M("#3FB6E8", 0.05, { emissive: "#1D8FD0", emissiveIntensity: 0.35 }), 0.95, 0.15, 0.85);
+    for (const [x, z] of [[1.55, -1.45], [-1.55, -1.45], [1.6, 0.1]]) { const tr = makeTree(1.15, "#2F8F48"); tr.position.set(x, 0.08, z); g.add(tr); }
+    for (const [x, z] of [[-1.55, 1.6], [0.0, 1.6], [1.55, 1.6]]) { const l = lamp(); l.position.set(x, 0.08, z); g.add(l); }
   } else if (tier === "hovli" && o.flags) {
     const h = makeTier("hovli", { ...o, flags: false }); g.add(h);
     const flag = (cols, x) => { mesh(g, new THREE.CylinderGeometry(0.02, 0.02, 1.4, 8), M("#D1D5DB", 0.3), x, 0.78, 1.0); cols.forEach((c, i) => mesh(g, new THREE.BoxGeometry(0.5, 0.1, 0.01), M(c, 0.6), x + 0.26, 1.38 - i * 0.1, 1.0)); };

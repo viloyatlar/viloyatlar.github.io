@@ -93,11 +93,10 @@
       "region": "TSH",
       "place": "Toshkent",
       "kind": "house",
-      "tier": "villa",
+      "tier": "villa3",
       "qism": 4,
-      "note": "3 qavatli mini villa",
-      "gift": "car",
-      "carColor": "#1F2937"
+      "note": "3 qavatli villa + garaj + vertolyot",
+      "carColor": "#111827"
     },
     {
       "nick": "xakulov_",
@@ -2275,7 +2274,7 @@
       "region": "QQR",
       "place": "Nukus",
       "kind": "house",
-      "tier": "muzey",
+      "tier": "aeroport",
       "qism": 7,
       "note": "Aeroport"
     },
@@ -2537,7 +2536,7 @@
       "region": "QQR",
       "place": "Nukus",
       "kind": "house",
-      "tier": "muzey",
+      "tier": "aeroport",
       "qism": 7,
       "note": "Aeroport"
     },
@@ -3145,7 +3144,7 @@
       "region": "QQR",
       "place": "Nukus",
       "kind": "house",
-      "tier": "muzey",
+      "tier": "aeroport",
       "qism": 7,
       "note": "Aeroport"
     },
