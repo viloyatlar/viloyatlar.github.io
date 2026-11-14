@@ -3739,6 +3739,306 @@
       "kind": "house",
       "tier": "oddiy",
       "qism": 7
+    },
+    {
+      "nick": "qnarzillaev",
+      "region": "TSH",
+      "place": "Toshkent",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "dwltbaev_14g",
+      "region": "QQR",
+      "place": "Nukus",
+      "kind": "house",
+      "tier": "muzey",
+      "qism": 8,
+      "note": "Bino"
+    },
+    {
+      "nick": "sh_a_x_z_a_d_a15",
+      "region": "QQR",
+      "place": "Nukus",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "flexy.napike",
+      "region": "AND",
+      "place": "Andijon",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "_baxram_2012_30",
+      "region": "QQR",
+      "place": "Nukus",
+      "kind": "house",
+      "tier": "burj",
+      "qism": 8,
+      "note": "Burj Xalifa"
+    },
+    {
+      "nick": "__aqnur__00",
+      "region": "QQR",
+      "place": "Nukus",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "armanio019",
+      "region": "QQR",
+      "place": "Nukus",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "gulnara_gulnara.u",
+      "region": "QQR",
+      "place": "Nukus",
+      "kind": "house",
+      "tier": "minora",
+      "qism": 8,
+      "floors": 3,
+      "note": "3 qavatli uy"
+    },
+    {
+      "nick": "oskinnbayevv",
+      "region": "QQR",
+      "place": "Nukus",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "quvondiq7833",
+      "region": "XOR",
+      "place": "Xorazm",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "reymov_020",
+      "region": "QQR",
+      "place": "Nukus",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "bo1taboyev.sh",
+      "region": "XOR",
+      "place": "Xorazm",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "m1rzamurodovvv_",
+      "region": "BUX",
+      "place": "Buxoro",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "ramazonov__717",
+      "region": "NAV",
+      "place": "Navoiy",
+      "kind": "house",
+      "tier": "uy2",
+      "qism": 8,
+      "note": "2 qavatli uy"
+    },
+    {
+      "nick": "turd1muratova_l5",
+      "region": "QQR",
+      "place": "Nukus",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "asilyomgiriv",
+      "region": "BUX",
+      "place": "Buxoro",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "asil.a123456789",
+      "region": "QAS",
+      "place": "Qashqadaryo",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "_zakirivich_1",
+      "region": "QQR",
+      "place": "Nukus",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "misszebu1411",
+      "region": "QQR",
+      "place": "Nukus",
+      "kind": "house",
+      "tier": "minora",
+      "qism": 8,
+      "floors": 3,
+      "note": "3 qavatli uy"
+    },
+    {
+      "nick": "_ismailov_0016",
+      "region": "QAS",
+      "place": "Qashqadaryo",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "uvaysiytasheva",
+      "region": "NAV",
+      "place": "Navoiy",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "shaxnoza.20_13",
+      "region": "QQR",
+      "place": "Nukus",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "aslbek.yangiboyev_1",
+      "region": "XOR",
+      "place": "Xorazm",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "atabek_20176",
+      "region": "QQR",
+      "place": "Nukus",
+      "kind": "house",
+      "tier": "muzey",
+      "qism": 8,
+      "note": "Bino"
+    },
+    {
+      "nick": "kayratvch.14",
+      "region": "QQR",
+      "place": "Nukus",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "bautosh2014",
+      "region": "QQR",
+      "place": "Nukus",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "abdurohman_6662",
+      "region": "XOR",
+      "place": "Xorazm",
+      "kind": "house",
+      "tier": "uy2",
+      "qism": 8,
+      "note": "2 qavatli uy"
+    },
+    {
+      "nick": "khbaev.mobi",
+      "region": "QQR",
+      "place": "Nukus",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "baxaua1dinov",
+      "region": "QQR",
+      "place": "Nukus",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "_al_l_aniy_az",
+      "region": "QQR",
+      "place": "Nukus",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "s.u.l333",
+      "region": "QQR",
+      "place": "Nukus",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "salohiddin_1700",
+      "region": "SUR",
+      "place": "Surxondaryo",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "sugdiyona_19_",
+      "region": "SUR",
+      "place": "Surxondaryo",
+      "kind": "house",
+      "tier": "oddiy",
+      "qism": 8
+    },
+    {
+      "nick": "moldir2_32",
+      "region": "QQR",
+      "place": "Nukus",
+      "kind": "house",
+      "tier": "masjid",
+      "qism": 8,
+      "note": "Masjid"
+    },
+    {
+      "nick": "lazizbe_rustamov",
+      "region": "QAS",
+      "place": "Qashqadaryo",
+      "kind": "house",
+      "tier": "teleminora",
+      "qism": 8,
+      "note": "Qarshi soat minorasi"
+    },
+    {
+      "nick": "satullaeva_13",
+      "region": "QQR",
+      "place": "Nukus",
+      "kind": "house",
+      "tier": "villa",
+      "qism": 8,
+      "note": "Boylar uyi"
     }
   ]
 }
